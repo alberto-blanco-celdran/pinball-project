@@ -33,6 +33,11 @@ public:
 
 	void DestroyBody(PhysicsBody* pbody);
 	void BeginContact(b2Contact* contact) override;
+	PhysicsBody* CreateCircle(int x, int y, int radius);
+	PhysicsBody* CreateStaticCircle(int x, int y, int radius, float restitution);
+	PhysicsBody* CreateStaticRectangle(int x, int y, int half_width, int half_height);
+	PhysicsBody* CreateRectangle(int x, int y, int half_width, int half_height);
+
 
 private:
 	bool debug;

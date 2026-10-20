@@ -23,5 +23,14 @@ public:
 	void DestroyAllEntities();
 
 public:
+
+
+
+	Texture2D circle;
+	Texture2D box;
+
+	uint32 bonus_fx;
+
+
 	std::vector<PhysicsEntity*> entities;
 };
