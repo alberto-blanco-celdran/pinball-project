@@ -14,8 +14,7 @@ protected:
 
 	PhysicsEntity(PhysBody* _body)
 		: body(_body)
-	{
-	}
+	{}
 
 public:
 	virtual ~PhysicsEntity() = default;
@@ -27,59 +26,84 @@ public:
 	PhysBody* body;
 };
 
-class FlipperAnchor : public PhysicsEntity {
+class Ball : public PhysicsEntity {
 public:
-	FlipperAnchor(ModulePhysics* physics, int x, int y)
+	Ball(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreateCircle(x, y, 24))
+	{}
+
+	void Update() override {}
+};
+
+class Paddle : public PhysicsEntity {
+	static constexpr int points[10] = {
+		0, 0,
+		16, -24,
+		128, -2,
+		128, 2,
+		16, 24,
+	};
+
+public:
+	Paddle(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreatePolygon(x, y, points, 10))
+	{}
+
+	void Update() override {}
+};
+
+class Flipper : public PhysicsEntity {
+protected:
+	const float LIFT_TORQUE = 1000.0;
+	const float REST_TORQUE = 100.0;
+	const float LIMIT_ANGLE = 35.0f;
+
+public:
+	Flipper(ModulePhysics* physics, int x, int y, bool reverse)
 		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 16, 16))
+		, physics(physics), joint(NULL), reversed(reverse)
 	{
 		b2Filter filter = b2Filter();
 		filter.categoryBits = 0x0000; // do not collide with anything
 		for (b2Fixture* fixture = body->body->GetFixtureList(); fixture; fixture = fixture->GetNext())
 		{
 			fixture->SetFilterData(filter);
-
 		}
 	}
 
-	void CreateJoint(Flipper* flipper) {
+	void Update() override {}
+
+	void CreateJoint(Paddle* paddle) {
+		float offset = reversed ? 180.0f : 0.0f;
 		b2RevoluteJointDef def;
-		def.Initialize(body->body, flipper->body->body, body->body->GetWorldCenter());
-		// TODO: parameters
-		world->CreateJoint(&def);
+		def.Initialize(body->body, paddle->body->body, body->body->GetWorldCenter());
+		def.enableLimit = true;
+		def.lowerAngle = DEGTORAD * (offset - LIMIT_ANGLE);
+		def.upperAngle = DEGTORAD * (LIMIT_ANGLE + offset);
+		def.enableMotor = true;
+		joint = reinterpret_cast<b2RevoluteJoint*>(physics->CreateJoint(def));
 	}
 
-	void Update() override {
-
+	void SetLifted(bool lift) {
+		float mul = reversed ? -1.0f : 1.0f;
+		if (lift) {
+			joint->SetMaxMotorTorque(LIFT_TORQUE);
+			joint->SetMotorSpeed(-LIFT_TORQUE * mul);
+		}
+		else {
+			joint->SetMaxMotorTorque(REST_TORQUE);
+			joint->SetMotorSpeed(REST_TORQUE * mul);
+		}
 	}
 
 private:
-	b2World* world;
+	ModulePhysics* physics;
 	b2RevoluteJoint* joint;
+	bool reversed;
 };
 
-class Flipper : public PhysicsEntity {
-	static constexpr int points[8] = {
-		-1, 0,
-		11, -26,
-		132, 0,
-		26, 26,
-	};
-
-public:
-	Flipper(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreatePolygon(x, y, points, 8))
-	{
-		
-	}
-
-	void Update() override {
-		
-	}
-};
-
-ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled)
-{
-}
+ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
+{}
 
 ModuleGame::~ModuleGame()
 {}
@@ -90,11 +114,23 @@ bool ModuleGame::Start()
 	LOG("Loading Intro assets");
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
-	FlipperAnchor* anchor0 = new FlipperAnchor(App->physics, 80, 80);
-	Flipper* flipper0 = new Flipper(App->physics, 50, 80);
-	entities.push_back(anchor0);
-	entities.push_back(flipper0);
-	anchor0->CreateJoint(flipper0);
+
+	float leftFlipperX = 80.0f;
+	float rightFlipperX = 300.0f;
+	float flippersY = 480.0f;
+	float paddleOffset = 24.0f;
+
+	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
+	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY);
+	entities.push_back(leftFlipper);
+	entities.push_back(paddle0);
+	leftFlipper->CreateJoint(paddle0);
+
+	rightFlipper = new Flipper(App->physics, rightFlipperX, flippersY, true);
+	Paddle* paddle1 = new Paddle(App->physics, rightFlipperX - paddleOffset, flippersY);
+	entities.push_back(rightFlipper);
+	entities.push_back(paddle1);
+	rightFlipper->CreateJoint(paddle1);
 
 	return true;
 }
@@ -116,6 +152,13 @@ update_status ModuleGame::Update()
 	{
 		entity->Update();
 
+	}
+
+	leftFlipper->SetLifted(IsKeyDown(KEY_LEFT));
+	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
+
+	if (IsKeyPressed(KEY_F2)) {
+		entities.push_back(new Ball(App->physics, GetMouseX(), GetMouseY()));
 	}
 
 	return UPDATE_CONTINUE;

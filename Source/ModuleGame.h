@@ -10,10 +10,14 @@
 
 class PhysBody;
 class PhysicsEntity;
-
+class Flipper;
 
 class ModuleGame : public Module
 {
+protected:
+	Flipper* leftFlipper;
+	Flipper* rightFlipper;
+
 public:
 	ModuleGame(Application* app, bool start_enabled = true);
 	~ModuleGame();
@@ -26,8 +30,6 @@ public:
 
 	void DestroyEntity(PhysicsEntity* entity);
 	void DestroyAllEntities();
-
-public:
-
+	
 	std::vector<PhysicsEntity*> entities;
 };

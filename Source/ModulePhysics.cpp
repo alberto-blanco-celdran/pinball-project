@@ -43,6 +43,10 @@ update_status ModulePhysics::PostUpdate()
 		debug = !debug;
 	}
 
+	if (!debug) {
+		return UPDATE_CONTINUE;
+	}
+
 	// Bonus code: this will iterate all objects in the world and draw the circles
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 	{
@@ -321,6 +325,10 @@ PhysBody* ModulePhysics::CreatePolygon(int x, int y, const int* points, int size
 
 	return pbody;
 
+}
+
+b2Joint* ModulePhysics::CreateJoint(b2JointDef& def) {
+	return world->CreateJoint(&def);
 }
 
 void ModulePhysics::DestroyBody(PhysBody* pbody)
