@@ -289,6 +289,40 @@ PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
 	return pbody;
 }
 
+PhysBody* ModulePhysics::CreatePolygon(int x, int y, const int* points, int size) {
+
+	PhysBody* pbody = new PhysBody();
+
+	b2BodyDef body;
+	body.type = b2_dynamicBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	int count = size / 2;
+	b2Vec2* vertices = new b2Vec2[count];
+	for (int i = 0; i < count; ++i)
+	{
+		vertices[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
+		vertices[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+	}
+
+	b2PolygonShape shape;
+	shape.Set(vertices, count);
+	delete[] vertices;
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	fixture.density = 1.0f;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+
+}
+
 void ModulePhysics::DestroyBody(PhysBody* pbody)
 {
 	if (pbody == NULL)

@@ -27,6 +27,56 @@ public:
 	PhysBody* body;
 };
 
+class FlipperAnchor : public PhysicsEntity {
+public:
+	FlipperAnchor(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 16, 16))
+	{
+		b2Filter filter = b2Filter();
+		filter.categoryBits = 0x0000; // do not collide with anything
+		for (b2Fixture* fixture = body->body->GetFixtureList(); fixture; fixture = fixture->GetNext())
+		{
+			fixture->SetFilterData(filter);
+
+		}
+	}
+
+	void CreateJoint(Flipper* flipper) {
+		b2RevoluteJointDef def;
+		def.Initialize(body->body, flipper->body->body, body->body->GetWorldCenter());
+		// TODO: parameters
+		world->CreateJoint(&def);
+	}
+
+	void Update() override {
+
+	}
+
+private:
+	b2World* world;
+	b2RevoluteJoint* joint;
+};
+
+class Flipper : public PhysicsEntity {
+	static constexpr int points[8] = {
+		-1, 0,
+		11, -26,
+		132, 0,
+		26, 26,
+	};
+
+public:
+	Flipper(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreatePolygon(x, y, points, 8))
+	{
+		
+	}
+
+	void Update() override {
+		
+	}
+};
+
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
 }
@@ -40,6 +90,11 @@ bool ModuleGame::Start()
 	LOG("Loading Intro assets");
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
+	FlipperAnchor* anchor0 = new FlipperAnchor(App->physics, 80, 80);
+	Flipper* flipper0 = new Flipper(App->physics, 50, 80);
+	entities.push_back(anchor0);
+	entities.push_back(flipper0);
+	anchor0->CreateJoint(flipper0);
 
 	return true;
 }
