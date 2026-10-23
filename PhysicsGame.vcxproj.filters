@@ -28,10 +28,10 @@
     <ClCompile Include="Source\ModuleGame.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="Source\PhysicsBody.cpp">
+    <ClCompile Include="Source\Bouncer.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Bouncer.cpp">
+    <ClCompile Include="Source\Ball.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -69,10 +69,10 @@
     <ClInclude Include="Source\PhysicsEntity.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\PhysicsBody.h">
+    <ClInclude Include="Source\Bouncer.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Bouncer.h">
+    <ClInclude Include="Source\Ball.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

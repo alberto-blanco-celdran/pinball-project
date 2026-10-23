@@ -3,7 +3,6 @@
 #include "Globals.h"
 #include "Module.h"
 #include "PhysicsEntity.h"
-#include "PhysicsBody.h"
 
 #include <vector>
 

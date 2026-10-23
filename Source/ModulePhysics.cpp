@@ -1,7 +1,6 @@
 #include "Globals.h"
 #include "Application.h"
 #include "ModulePhysics.h"
-#include "PhysicsBody.h"
 
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
@@ -129,6 +128,159 @@ bool ModulePhysics::CleanUp()
 	return true;
 }
 
+PhysicsBody* ModulePhysics::CreateCircle(int x, int y, int radius)
+{
+	PhysicsBody* pbody = new PhysicsBody();
+
+	b2BodyDef body;
+	body.type = b2_dynamicBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2CircleShape shape;
+	shape.m_radius = PIXEL_TO_METERS(radius);
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	fixture.density = 1.0f;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
+PhysicsBody* ModulePhysics::CreateStaticCircle(int x, int y, int radius)
+{
+	PhysicsBody* pbody = new PhysicsBody();
+
+	b2BodyDef body;
+	body.type = b2_staticBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2CircleShape shape;
+	shape.m_radius = PIXEL_TO_METERS(radius);
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	fixture.density = 1.0f;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
+PhysicsBody* ModulePhysics::CreateRectangle(int x, int y, int half_width, int half_height)
+{
+	PhysicsBody* pbody = new PhysicsBody();
+
+	b2BodyDef body;
+	body.type = b2_dynamicBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2PolygonShape box;
+	box.SetAsBox(PIXEL_TO_METERS(half_width), PIXEL_TO_METERS(half_height));
+
+	b2FixtureDef fixture;
+	fixture.shape = &box;
+	fixture.density = 1.0f;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
+PhysicsBody* ModulePhysics::CreateStaticRectangle(int x, int y, int half_width, int half_height)
+{
+	PhysicsBody* pbody = new PhysicsBody();
+
+	b2BodyDef body;
+	body.type = b2_staticBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2PolygonShape box;
+	box.SetAsBox(PIXEL_TO_METERS(half_width), PIXEL_TO_METERS(half_height));
+
+	b2FixtureDef fixture;
+	fixture.shape = &box;
+	fixture.density = 1.0f;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
+// Static box that detects overlaps but does not collide (a trigger)
+PhysicsBody* ModulePhysics::CreateRectangleSensor(int x, int y, int half_width, int half_height)
+{
+	PhysicsBody* pbody = new PhysicsBody();
+
+	b2BodyDef body;
+	body.type = b2_staticBody;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2PolygonShape box;
+	box.SetAsBox(PIXEL_TO_METERS(half_width), PIXEL_TO_METERS(half_height));
+
+	b2FixtureDef fixture;
+	fixture.shape = &box;
+	fixture.isSensor = true;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
+// size is the number of ints, not vertices
+PhysicsBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
+{
+	PhysicsBody* pbody = new PhysicsBody();
+
+	b2BodyDef body;
+	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = world->CreateBody(&body);
+
+	int count = size / 2;
+	b2Vec2* vertices = new b2Vec2[count];
+	for (int i = 0; i < count; ++i)
+	{
+		vertices[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
+		vertices[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+	}
+
+	b2ChainShape shape;
+	shape.CreateLoop(vertices, count);
+	delete[] vertices; // CreateLoop copies the vertices
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
 void ModulePhysics::DestroyBody(PhysicsBody* pbody)
 {
 	if (pbody == NULL)
@@ -149,4 +301,66 @@ void ModulePhysics::BeginContact(b2Contact* contact)
 
 	if (b != NULL && b->listener != NULL)
 		b->listener->OnCollision(b, a);
+}
+
+void PhysicsBody::GetPosition(int& x, int& y) const
+{
+	b2Vec2 pos = body->GetPosition();
+	x = METERS_TO_PIXELS(pos.x);
+	y = METERS_TO_PIXELS(pos.y);
+}
+
+float PhysicsBody::GetRotation() const
+{
+	return body->GetAngle();
+}
+
+bool PhysicsBody::Contains(int x, int y) const
+{
+	b2Vec2 p(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
+
+	// True if the point is inside ANY of the shapes of this body
+	for (b2Fixture* fixture = body->GetFixtureList(); fixture; fixture = fixture->GetNext())
+	{
+		if (fixture->GetShape()->TestPoint(body->GetTransform(), p))
+			return true;
+	}
+
+	return false;
+}
+
+int PhysicsBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const
+{
+	// No hit: return -1
+	// Hit: fill normal_x and normal_y and return the distance between x1,y1 and the hit point
+	int ret = -1;
+
+	b2RayCastInput input;
+	input.p1.Set(PIXEL_TO_METERS(x1), PIXEL_TO_METERS(y1));
+	input.p2.Set(PIXEL_TO_METERS(x2), PIXEL_TO_METERS(y2));
+	input.maxFraction = 1.0f;
+
+	float closest = 1.0f;
+
+	for (b2Fixture* fixture = body->GetFixtureList(); fixture; fixture = fixture->GetNext())
+	{
+		// A chain has one child per edge
+		for (int32 i = 0; i < fixture->GetShape()->GetChildCount(); ++i)
+		{
+			b2RayCastOutput output;
+			if (fixture->GetShape()->RayCast(&output, input, body->GetTransform(), i) && output.fraction <= closest)
+			{
+				closest = output.fraction;
+
+				float dx = (float)(x2 - x1);
+				float dy = (float)(y2 - y1);
+				ret = (int)(output.fraction * sqrtf(dx * dx + dy * dy));
+
+				normal_x = output.normal.x;
+				normal_y = output.normal.y;
+			}
+		}
+	}
+
+	return ret;
 }
