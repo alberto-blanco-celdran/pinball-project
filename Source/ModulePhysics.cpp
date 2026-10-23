@@ -1,21 +1,28 @@
 #include "Globals.h"
 #include "Application.h"
+#include "ModuleRender.h"
 #include "ModulePhysics.h"
+
+#include "p2Point.h"
+
+#include <math.h>
 
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
-	debug = true;
 	world = NULL;
+	debug = true;
 }
 
 // Destructor
 ModulePhysics::~ModulePhysics()
-{}
+{
+}
 
 bool ModulePhysics::Start()
 {
 	LOG("Creating Physics 2D environment");
 
+	// Assign the member variable (do NOT declare a local "b2World* world" here, it would shadow the member)
 	world = new b2World(b2Vec2(GRAVITY_X, -GRAVITY_Y));
 	world->SetContactListener(this);
 
@@ -36,7 +43,7 @@ update_status ModulePhysics::PostUpdate()
 		debug = !debug;
 	}
 
-	// draw shapes in wireframe
+	// Bonus code: this will iterate all objects in the world and draw the circles
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 	{
 		for(b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
@@ -128,9 +135,10 @@ bool ModulePhysics::CleanUp()
 	return true;
 }
 
-PhysicsBody* ModulePhysics::CreateCircle(int x, int y, int radius)
+// PhysBody pointer as UserData: set it in the b2BodyDef BEFORE calling CreateBody()
+PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius)
 {
-	PhysicsBody* pbody = new PhysicsBody();
+	PhysBody* pbody = new PhysBody();
 
 	b2BodyDef body;
 	body.type = b2_dynamicBody;
@@ -152,9 +160,9 @@ PhysicsBody* ModulePhysics::CreateCircle(int x, int y, int radius)
 	return pbody;
 }
 
-PhysicsBody* ModulePhysics::CreateStaticCircle(int x, int y, int radius)
+PhysBody* ModulePhysics::CreateStaticCircle(int x, int y, int radius)
 {
-	PhysicsBody* pbody = new PhysicsBody();
+	PhysBody* pbody = new PhysBody();
 
 	b2BodyDef body;
 	body.type = b2_staticBody;
@@ -176,9 +184,9 @@ PhysicsBody* ModulePhysics::CreateStaticCircle(int x, int y, int radius)
 	return pbody;
 }
 
-PhysicsBody* ModulePhysics::CreateRectangle(int x, int y, int half_width, int half_height)
+PhysBody* ModulePhysics::CreateRectangle(int x, int y, int half_width, int half_height)
 {
-	PhysicsBody* pbody = new PhysicsBody();
+	PhysBody* pbody = new PhysBody();
 
 	b2BodyDef body;
 	body.type = b2_dynamicBody;
@@ -200,9 +208,9 @@ PhysicsBody* ModulePhysics::CreateRectangle(int x, int y, int half_width, int ha
 	return pbody;
 }
 
-PhysicsBody* ModulePhysics::CreateStaticRectangle(int x, int y, int half_width, int half_height)
+PhysBody* ModulePhysics::CreateStaticRectangle(int x, int y, int half_width, int half_height)
 {
-	PhysicsBody* pbody = new PhysicsBody();
+	PhysBody* pbody = new PhysBody();
 
 	b2BodyDef body;
 	body.type = b2_staticBody;
@@ -225,9 +233,9 @@ PhysicsBody* ModulePhysics::CreateStaticRectangle(int x, int y, int half_width, 
 }
 
 // Static box that detects overlaps but does not collide (a trigger)
-PhysicsBody* ModulePhysics::CreateRectangleSensor(int x, int y, int half_width, int half_height)
+PhysBody* ModulePhysics::CreateRectangleSensor(int x, int y, int half_width, int half_height)
 {
-	PhysicsBody* pbody = new PhysicsBody();
+	PhysBody* pbody = new PhysBody();
 
 	b2BodyDef body;
 	body.type = b2_staticBody;
@@ -250,9 +258,9 @@ PhysicsBody* ModulePhysics::CreateRectangleSensor(int x, int y, int half_width, 
 }
 
 // size is the number of ints, not vertices
-PhysicsBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
+PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
 {
-	PhysicsBody* pbody = new PhysicsBody();
+	PhysBody* pbody = new PhysBody();
 
 	b2BodyDef body;
 	body.position.Set(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
@@ -281,11 +289,11 @@ PhysicsBody* ModulePhysics::CreateChain(int x, int y, const int* points, int siz
 	return pbody;
 }
 
-void ModulePhysics::DestroyBody(PhysicsBody* pbody)
+void ModulePhysics::DestroyBody(PhysBody* pbody)
 {
 	if (pbody == NULL)
 		return;
-	
+
 	world->DestroyBody(pbody->body); // Box2D frees the body and its fixtures
 	delete pbody;                    // we free our own wrapper
 }
@@ -293,8 +301,8 @@ void ModulePhysics::DestroyBody(PhysicsBody* pbody)
 // Call the listeners that are not NULL
 void ModulePhysics::BeginContact(b2Contact* contact)
 {
-	PhysicsBody* a = (PhysicsBody*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
-	PhysicsBody* b = (PhysicsBody*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+	PhysBody* a = (PhysBody*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+	PhysBody* b = (PhysBody*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
 
 	if (a != NULL && a->listener != NULL)
 		a->listener->OnCollision(a, b);
@@ -303,19 +311,20 @@ void ModulePhysics::BeginContact(b2Contact* contact)
 		b->listener->OnCollision(b, a);
 }
 
-void PhysicsBody::GetPosition(int& x, int& y) const
+// PhysBody ------------------------------------
+void PhysBody::GetPosition(int& x, int& y) const
 {
 	b2Vec2 pos = body->GetPosition();
 	x = METERS_TO_PIXELS(pos.x);
 	y = METERS_TO_PIXELS(pos.y);
 }
 
-float PhysicsBody::GetRotation() const
+float PhysBody::GetRotation() const
 {
 	return body->GetAngle();
 }
 
-bool PhysicsBody::Contains(int x, int y) const
+bool PhysBody::Contains(int x, int y) const
 {
 	b2Vec2 p(PIXEL_TO_METERS(x), PIXEL_TO_METERS(y));
 
@@ -329,7 +338,7 @@ bool PhysicsBody::Contains(int x, int y) const
 	return false;
 }
 
-int PhysicsBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const
+int PhysBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const
 {
 	// No hit: return -1
 	// Hit: fill normal_x and normal_y and return the distance between x1,y1 and the hit point

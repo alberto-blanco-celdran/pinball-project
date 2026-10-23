@@ -2,9 +2,15 @@
 
 #include "Globals.h"
 #include "Module.h"
-#include "PhysicsEntity.h"
 
+#include "p2Point.h"
+
+#include "raylib.h"
 #include <vector>
+
+class PhysBody;
+class PhysicsEntity;
+
 
 class ModuleGame : public Module
 {
@@ -16,20 +22,12 @@ public:
 	update_status Update();
 	bool CleanUp();
 
-	void OnCollision(PhysicsBody* bodyA, PhysicsBody* bodyB) override;
+	void OnCollision(PhysBody* bodyA, PhysBody* bodyB) override;
 
 	void DestroyEntity(PhysicsEntity* entity);
 	void DestroyAllEntities();
 
 public:
-
-
-
-	Texture2D circle;
-	Texture2D box;
-
-	uint32 bonus_fx;
-
 
 	std::vector<PhysicsEntity*> entities;
 };

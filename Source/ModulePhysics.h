@@ -17,13 +17,12 @@
 #define METERS_TO_PIXELS(m) ((int) floor(PIXELS_PER_METER * (m)))
 #define PIXEL_TO_METERS(p)  ((float) METER_PER_PIXEL * (p))
 
-class PhysicsBody
+// Small class to return to other modules to track position and rotation of physics bodies
+class PhysBody
 {
 public:
-	PhysicsBody()
-		: body(NULL), listener(NULL)
-	{
-	}
+	PhysBody() : body(NULL), listener(NULL)
+	{}
 
 	void GetPosition(int& x, int& y) const;
 	float GetRotation() const;
@@ -32,6 +31,7 @@ public:
 
 public:
 	b2Body* body;
+	// Module that listens to the collisions of this body
 	Module* listener;
 };
 
@@ -47,18 +47,19 @@ public:
 	update_status PostUpdate();
 	bool CleanUp();
 
-	PhysicsBody* CreateCircle(int x, int y, int radius);
-	PhysicsBody* CreateStaticCircle(int x, int y, int radius);
-	PhysicsBody* CreateRectangle(int x, int y, int half_width, int half_height);
-	PhysicsBody* CreateStaticRectangle(int x, int y, int half_width, int half_height);
-	PhysicsBody* CreateRectangleSensor(int x, int y, int half_width, int half_height);
-	PhysicsBody* CreateChain(int x, int y, const int* points, int size);
+	PhysBody* CreateCircle(int x, int y, int radius);
+	PhysBody* CreateStaticCircle(int x, int y, int radius);
+	PhysBody* CreateRectangle(int x, int y, int half_width, int half_height);
+	PhysBody* CreateStaticRectangle(int x, int y, int half_width, int half_height);
+	PhysBody* CreateRectangleSensor(int x, int y, int half_width, int half_height);
+	PhysBody* CreateChain(int x, int y, const int* points, int size);
 
+	void DestroyBody(PhysBody* pbody);
 
-	void DestroyBody(PhysicsBody* pbody);
 	void BeginContact(b2Contact* contact) override;
 
 private:
+
 	bool debug;
 	b2World* world;
 };

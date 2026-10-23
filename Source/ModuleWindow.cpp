@@ -3,11 +3,13 @@
 #include "ModuleWindow.h"
 
 ModuleWindow::ModuleWindow(Application* app, bool start_enabled) : Module(app, start_enabled)
-{}
+{
+}
 
 // Destructor
 ModuleWindow::~ModuleWindow()
-{}
+{
+}
 
 // Called before render is available
 bool ModuleWindow::Init()

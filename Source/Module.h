@@ -3,7 +3,7 @@
 #include "Globals.h"
 
 class Application;
-class PhysicsBody;
+class PhysBody;
 
 class Module
 {
@@ -73,6 +73,7 @@ public:
 	}
 
 	// Called when a body that has this module as listener collides
-	virtual void OnCollision(PhysicsBody* bodyA, PhysicsBody* bodyB)
-	{}
+	virtual void OnCollision(PhysBody* bodyA, PhysBody* bodyB)
+	{
+	}
 };
