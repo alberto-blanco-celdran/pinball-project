@@ -11,12 +11,14 @@
 class PhysBody;
 class PhysicsEntity;
 class Flipper;
+class Spring;
 
 class ModuleGame : public Module
 {
 protected:
 	Flipper* leftFlipper;
 	Flipper* rightFlipper;
+	Spring* springbase;
 
 public:
 	ModuleGame(Application* app, bool start_enabled = true);
