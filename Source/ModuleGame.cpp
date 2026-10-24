@@ -51,21 +51,21 @@ public:
 
 	Spring(ModulePhysics* physics, int x, int y)
 		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 24, 6))
-		,physics(physics)
+		//,physics(physics)
 	{
 	}
 	
 	void Update() override {}
 
 	
-	void CreateJoint(Kicker* kicker, Spring* spring) {
+	/*void CreateJoint(Kicker* kicker, Spring* spring) {
 		b2DistanceJointDef def;
 		b2Body* a = body->body;          
 		b2Body* b = kicker->body->body;  
 		def.Initialize( a,b,a->GetWorldCenter(), b->GetWorldCenter());
 		joint = (b2DistanceJoint*)physics->world->CreateJoint(&def);
 	}
-	
+	*/
 };
 
 class Paddle : public PhysicsEntity {
@@ -172,9 +172,9 @@ bool ModuleGame::Start()
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
 
-	springbase = new Spring(App->physics, baseX, baseY);
+	Spring*springbase = new Spring(App->physics, baseX, baseY);
 	Kicker* springKicker = new Kicker(App->physics, KickerX, KickerY);
-	springbase->CreateJoint(springKicker);
+	//springbase->CreateJoint(springKicker);
 
 
 	return true;
