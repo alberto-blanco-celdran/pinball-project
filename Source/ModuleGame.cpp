@@ -35,6 +35,26 @@ public:
 	void Update() override {}
 };
 
+class Spring : public PhysicsEntity {
+public:
+	Spring(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 24, 6))
+	{
+	}
+	
+	void Update() override {}
+};
+
+class Kicker : public PhysicsEntity {
+public:
+	Kicker(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreateRectangle(x, y, 24,6))
+	{
+	}
+
+	void Update() override {}
+};
+
 class Paddle : public PhysicsEntity {
 	static constexpr int points[10] = {
 		0, 0,
@@ -51,6 +71,7 @@ public:
 
 	void Update() override {}
 };
+
 
 class Flipper : public PhysicsEntity {
 protected:
@@ -105,6 +126,7 @@ private:
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
 {}
 
+
 ModuleGame::~ModuleGame()
 {}
 
@@ -120,6 +142,11 @@ bool ModuleGame::Start()
 	float flippersY = 480.0f;
 	float paddleOffset = 24.0f;
 
+	float baseX = 900.0f;
+	float baseY = 450.0f;
+	float KickerX = 900.0f;
+	float KickerY = 500.0f;
+
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY);
 	entities.push_back(leftFlipper);
@@ -131,6 +158,10 @@ bool ModuleGame::Start()
 	entities.push_back(rightFlipper);
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
+
+	Spring* springbase = new Spring(App->physics, baseX, baseY);
+	Kicker* springkicker = new Kicker(App->physics, KickerX, KickerY);
+		
 
 	return true;
 }
@@ -157,9 +188,12 @@ update_status ModuleGame::Update()
 	leftFlipper->SetLifted(IsKeyDown(KEY_LEFT));
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
 
-	if (IsKeyPressed(KEY_F2)) {
+	if (IsKeyPressed(KEY_SPACE)) {
 		entities.push_back(new Ball(App->physics, GetMouseX(), GetMouseY()));
 	}
+	//if (IsKeyPressed(KEY_UP)) {
+		//entities.push_back(new Spring(App->physics, GetMouseX(), GetMouseY()));
+	
 
 	return UPDATE_CONTINUE;
 }
