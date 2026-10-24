@@ -35,24 +35,37 @@ public:
 	void Update() override {}
 };
 
+class Kicker : public PhysicsEntity {
+public:
+	Kicker(ModulePhysics* physics, int x, int y)
+		: PhysicsEntity(physics->CreateRectangle(x, y, 24, 6))
+	{
+	}
+
+	void Update() override {}
+
+};
+
 class Spring : public PhysicsEntity {
 public:
+
 	Spring(ModulePhysics* physics, int x, int y)
 		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 24, 6))
+		,physics(physics)
 	{
 	}
 	
 	void Update() override {}
-};
 
-class Kicker : public PhysicsEntity {
-public:
-	Kicker(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreateRectangle(x, y, 24,6))
-	{
+	
+	void CreateJoint(Kicker* kicker, Spring* spring) {
+		b2DistanceJointDef def;
+		b2Body* a = body->body;          
+		b2Body* b = kicker->body->body;  
+		def.Initialize( a,b,a->GetWorldCenter(), b->GetWorldCenter());
+		joint = (b2DistanceJoint*)physics->world->CreateJoint(&def);
 	}
-
-	void Update() override {}
+	
 };
 
 class Paddle : public PhysicsEntity {
@@ -144,7 +157,7 @@ bool ModuleGame::Start()
 
 	float baseX = 900.0f;
 	float baseY = 450.0f;
-	float KickerX = 900.0f;
+	float KickerX = 950.0f;
 	float KickerY = 500.0f;
 
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
@@ -159,9 +172,10 @@ bool ModuleGame::Start()
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
 
-	Spring* springbase = new Spring(App->physics, baseX, baseY);
-	Kicker* springkicker = new Kicker(App->physics, KickerX, KickerY);
-		
+	springbase = new Spring(App->physics, baseX, baseY);
+	Kicker* springKicker = new Kicker(App->physics, KickerX, KickerY);
+	springbase->CreateJoint(springKicker);
+
 
 	return true;
 }
