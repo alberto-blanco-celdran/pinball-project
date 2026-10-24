@@ -60,9 +60,9 @@ public:
 	
 	/*void CreateJoint(Kicker* kicker, Spring* spring) {
 		b2DistanceJointDef def;
-		b2Body* a = body->body;          
-		b2Body* b = kicker->body->body;  
-		def.Initialize( a,b,a->GetWorldCenter(), b->GetWorldCenter());
+		b2Body* spring_body = body->body;          
+		b2Body* kicker_body = kicker->body->body;  
+		def.Initialize( spring_body,kicker_body,spring_body->GetWorldCenter(), kicker->GetWorldCenter());
 		joint = (b2DistanceJoint*)physics->world->CreateJoint(&def);
 	}
 	*/
