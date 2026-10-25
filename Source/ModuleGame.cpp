@@ -205,8 +205,6 @@ update_status ModuleGame::Update()
 	if (IsKeyPressed(KEY_SPACE)) {
 		entities.push_back(new Ball(App->physics, GetMouseX(), GetMouseY()));
 	}
-	//if (IsKeyPressed(KEY_UP)) {
-		//entities.push_back(new Spring(App->physics, GetMouseX(), GetMouseY()));
 	
 
 	return UPDATE_CONTINUE;
