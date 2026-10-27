@@ -46,6 +46,7 @@ public:
 
 };
 
+
 class Spring : public PhysicsEntity {
 public:
 
@@ -136,6 +137,38 @@ private:
 	bool reversed;
 };
 
+
+class Bumper : public PhysicsEntity {
+public:
+	static constexpr float KICK_SPEED = 9.8f; // BOUNCE SPEED / fORCE
+
+	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius) : PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius)
+	{
+		body->listener = listener; 
+
+	}
+
+	void Update() override
+	{
+		int x, y;
+		body->GetPosition(x, y);
+	}
+
+	void Hit(PhysBody* ball)
+	{
+		
+		b2Vec2 dir = ball->body->GetPosition() - body->body->GetPosition();
+		dir.Normalize();
+
+		ball->body->SetLinearVelocity(KICK_SPEED * dir);
+	}
+
+private:
+	int radius;
+};
+
+
+
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
 {}
 
@@ -176,6 +209,9 @@ bool ModuleGame::Start()
 	Kicker* springKicker = new Kicker(App->physics, KickerX, KickerY);
 	//springbase->CreateJoint(springKicker);
 
+	//Bouncer
+	entities.push_back(new Bumper(App->physics, this, 500, 500, 40));
+
 
 	return true;
 }
@@ -212,6 +248,14 @@ update_status ModuleGame::Update()
 
 void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 {
+	for (PhysicsEntity* entity : entities)
+	{
+		Bumper* bumper = dynamic_cast<Bumper*>(entity);
+		if (bumper != NULL && bumper->body == bodyA)
+		{
+			bumper->Hit(bodyB);
+		}
+	}
 }
 
 void ModuleGame::DestroyEntity(PhysicsEntity* entity)
