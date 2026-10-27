@@ -28,11 +28,14 @@ public:
 
 class Ball : public PhysicsEntity {
 public:
-	Ball(ModulePhysics* physics, int x, int y)
+	Ball(ModulePhysics* physics, int x, int y, Texture2D& texture)
 		: PhysicsEntity(physics->CreateCircle(x, y, 24))
+		, texture(texture)
 	{}
 
 	void Update() override {}
+private:
+	Texture2D& texture;
 };
 
 class Kicker : public PhysicsEntity {
@@ -181,6 +184,11 @@ bool ModuleGame::Start()
 {
 	LOG("Loading Intro assets");
 
+	boardTexture = LoadTexture("Assets/board.png");
+	leftFlipperTexture = LoadTexture("Assets/flipper_left.png");
+	rightFlipperTexture = LoadTexture("Assets/flipper_right.png");
+	ballTexture = LoadTexture("Assets/ball.png");
+
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
 	float leftFlipperX = 80.0f;
@@ -221,6 +229,11 @@ bool ModuleGame::CleanUp()
 {
 	LOG("Unloading Intro scene");
 
+	UnloadTexture(boardTexture);
+	UnloadTexture(leftFlipperTexture);
+	UnloadTexture(rightFlipperTexture);
+	UnloadTexture(ballTexture);
+
 	DestroyAllEntities();
 
 	return true;
@@ -229,6 +242,8 @@ bool ModuleGame::CleanUp()
 // Update: draw background
 update_status ModuleGame::Update()
 {
+	DrawTexture(boardTexture, 0, 0, RAYWHITE);
+
 	for (PhysicsEntity* entity : entities)
 	{
 		entity->Update();
@@ -239,7 +254,7 @@ update_status ModuleGame::Update()
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
 
 	if (IsKeyPressed(KEY_SPACE)) {
-		entities.push_back(new Ball(App->physics, GetMouseX(), GetMouseY()));
+		entities.push_back(new Ball(App->physics, GetMouseX(), GetMouseY(), ballTexture));
 	}
 	
 

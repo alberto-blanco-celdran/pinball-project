@@ -3,6 +3,7 @@
 #include "ModuleWindow.h"
 #include "ModuleRender.h"
 #include <math.h>
+#include <iostream>
 
 ModuleRender::ModuleRender(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
@@ -17,9 +18,14 @@ ModuleRender::~ModuleRender()
 bool ModuleRender::Init()
 {
 	LOG("Creating Renderer context");
-	bool ret = true;
+	
+    int width = App->window->GetWidth();
+    int height = App->window->GetHeight();
+	
+    target = LoadRenderTexture(width, height);
+    targetSrc = Rectangle{ 0, 0, (float)width, -(float)height };
 
-	return ret;
+	return true;
 }
 
 // PreUpdate: clear buffer
@@ -31,12 +37,10 @@ update_status ModuleRender::PreUpdate()
 // Update: debug camera
 update_status ModuleRender::Update()
 {
-    ClearBackground(background);
-
-    // NOTE: This function setups render batching system for
-    // maximum performance, all consecutive Draw() calls are
-    // not processed until EndDrawing() is called
-    BeginDrawing();
+	// NOTE: This function setups render batching system for
+	// maximum performance, all consecutive Draw() calls are
+	// not processed until EndDrawing() is called
+	BeginTextureMode(target);
 
 	return UPDATE_CONTINUE;
 }
@@ -47,7 +51,21 @@ update_status ModuleRender::PostUpdate()
     // Draw everything in our batch!
     DrawFPS(10, 10);
 
-    EndDrawing();
+	EndTextureMode(); // game has rendered -- end texture mode
+
+	// render scaled viewport
+	short scnW = GetScreenWidth();
+	short scnH = GetScreenHeight();
+	short resScale = (scnW < scnH) ? scnW / targetSrc.width : scnH / targetSrc.height;
+	targetDest.width = targetSrc.width * resScale;
+	targetDest.height = targetSrc.height * resScale;
+	targetDest.x = scnW / 2 - targetDest.width / 2;
+	targetDest.y = scnH / 2 - targetDest.height / 2;
+
+	BeginDrawing();
+	ClearBackground(background);
+	DrawTexturePro(target.texture, targetSrc, targetDest, targetPos, 0.0f, WHITE);
+	EndDrawing();
 
 	return UPDATE_CONTINUE;
 }

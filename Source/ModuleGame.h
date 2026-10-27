@@ -18,6 +18,11 @@ class ModuleGame : public Module
 protected:
 	Flipper* leftFlipper;
 	Flipper* rightFlipper;
+
+	Texture2D boardTexture;
+	Texture2D leftFlipperTexture;
+	Texture2D rightFlipperTexture;
+	Texture2D ballTexture;
 public:
 	ModuleGame(Application* app, bool start_enabled = true);
 	~ModuleGame();

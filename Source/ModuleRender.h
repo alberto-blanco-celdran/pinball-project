@@ -22,6 +22,11 @@ public:
 
 public:
 
+	RenderTexture2D target;
+	Rectangle targetSrc;
+	Rectangle targetDest = Rectangle{ 0 };
+	Vector2 targetPos = Vector2{ 0 };
+
 	Color background;
     Rectangle camera;
 };
