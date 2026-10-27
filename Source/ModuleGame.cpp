@@ -110,8 +110,8 @@ private:
 
 class Flipper : public PhysicsEntity {
 protected:
-	const float MAX_MOTOR_TORQUE = 30.0f;
-	const float LIFT_TORQUE = 25.0f;
+	const float MAX_MOTOR_TORQUE = 50.0f;
+	const float LIFT_TORQUE = 35.0f;
 	const float REST_TORQUE = 15.0f;
 	const float LIMIT_ANGLE = 35.0f;
 
@@ -143,12 +143,6 @@ public:
 	}
 
 	void SetLifted(bool lift) {
-		if (lift != lifted) {
-			joint->EnableMotor(false); // HACK: I FUCKING HATE THIS!! WHY AM I FORCED TO DO THIS SHIT?? otherwise the paddles get stuck -- FUCK, I'VE WASTED SO MUCH TIME
-			lifted = lift;
-			return;
-		}
-		joint->EnableMotor(true);
 		joint->SetMotorSpeed((lift ? -LIFT_TORQUE : REST_TORQUE) * (reversed ? -1.0f : 1.0f));
 	}
 
@@ -156,7 +150,6 @@ private:
 	ModulePhysics* physics;
 	b2RevoluteJoint* joint;
 	bool reversed;
-	bool lifted = false;
 };
 
 

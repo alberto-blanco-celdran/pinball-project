@@ -8,11 +8,11 @@
 // Gravity in m/s^2. Screen Y grows DOWNWARDS and we convert meters <-> pixels without flipping Y,
 // so a POSITIVE Y gravity makes bodies fall down on screen. That is why the world receives -GRAVITY_Y.
 #define GRAVITY_X 0.0f
-#define GRAVITY_Y -2.0f
+#define GRAVITY_Y -16.0f
 
 // Units: Box2D works in meters (float), raylib draws in pixels (int)
-#define PIXELS_PER_METER 214.0f // if touched change METER_PER_PIXEL too
-#define METER_PER_PIXEL 0.00467f  // this is 1 / PIXELS_PER_METER !
+#define PIXELS_PER_METER 21.4f // if touched change METER_PER_PIXEL too
+#define METER_PER_PIXEL 0.0467f  // this is 1 / PIXELS_PER_METER !
 
 #define METERS_TO_PIXELS(m) ((int) floor(PIXELS_PER_METER * (m)))
 #define PIXEL_TO_METERS(p)  ((float) METER_PER_PIXEL * (p))
