@@ -58,9 +58,9 @@ update_status ModuleRender::PostUpdate()
 	int targetH = App->window->GetHeight();
 	short scnW = GetScreenWidth();
 	short scnH = GetScreenHeight();
-	short resScale = (scnW < scnH) ? scnW / targetW : scnH / targetH;
-	targetDest.width = targetW * resScale;
-	targetDest.height = targetH * resScale;
+	scale = (scnW < scnH) ? scnW / targetW : scnH / targetH;
+	targetDest.width = targetW * scale;
+	targetDest.height = targetH * scale;
 	targetDest.x = scnW / 2 - targetDest.width / 2;
 	targetDest.y = scnH / 2 - targetDest.height / 2;
 

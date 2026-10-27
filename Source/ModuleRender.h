@@ -12,7 +12,6 @@ private:
 protected:
 	RenderTexture2D target;
 	Rectangle targetSrc;
-	Rectangle targetDest = Rectangle{ 0 };
 	Vector2 targetPos = Vector2{ 0 };
 
 public:
@@ -30,4 +29,6 @@ public:
     bool DrawText(const char* text, int x, int y, Font font, int spacing, Color tint) const;
 
     Rectangle camera;
+	short scale;
+	Rectangle targetDest = Rectangle{ 0 };
 };

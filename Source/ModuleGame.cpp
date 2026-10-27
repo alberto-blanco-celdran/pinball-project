@@ -29,11 +29,18 @@ public:
 class Ball : public PhysicsEntity {
 public:
 	Ball(ModulePhysics* physics, int x, int y, Texture2D& texture)
-		: PhysicsEntity(physics->CreateCircle(x, y, 24))
+		: PhysicsEntity(physics->CreateCircle(x, y, 8))
 		, texture(texture)
 	{}
 
-	void Update() override {}
+	void Update() override {
+		int x, y;
+		body->GetPosition(x, y);
+		Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+		Rectangle dest = { (float)x, (float)y, (float)texture.width, (float)texture.height };
+		Vector2 origin = { (float)texture.width / 2.0f, (float)texture.height / 2.0f };
+		DrawTexturePro(texture, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
+	}
 private:
 	Texture2D& texture;
 };
@@ -75,30 +82,40 @@ public:
 class Paddle : public PhysicsEntity {
 	static constexpr int points[10] = {
 		0, 0,
-		16, -24,
-		128, -2,
-		128, 2,
-		16, 24,
+		2, -4,
+		24, -1,
+		24, 1,
+		2, 4,
 	};
 
 public:
-	Paddle(ModulePhysics* physics, int x, int y)
+	Paddle(ModulePhysics* physics, int x, int y, Texture2D& texture)
 		: PhysicsEntity(physics->CreatePolygon(x, y, points, 10))
+		, texture(texture)
 	{}
 
-	void Update() override {}
+	void Update() override {
+		int x, y;
+		body->GetPosition(x, y);
+		Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+		Rectangle dest = { (float)x, (float)y, (float)texture.width, (float)texture.height };
+		Vector2 origin = { (float)texture.width / 2.0f, (float)texture.height / 2.0f };
+		DrawTexturePro(texture, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
+	}
+private:
+	Texture2D& texture;
 };
 
 
 class Flipper : public PhysicsEntity {
 protected:
-	const float LIFT_TORQUE = 1000.0;
-	const float REST_TORQUE = 100.0;
+	const float LIFT_TORQUE = 10.0f;
+	const float REST_TORQUE = 5.0f;
 	const float LIMIT_ANGLE = 35.0f;
 
 public:
 	Flipper(ModulePhysics* physics, int x, int y, bool reverse)
-		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 16, 16))
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 1, 1))
 		, physics(physics), joint(NULL), reversed(reverse)
 	{
 		b2Filter filter = b2Filter();
@@ -191,10 +208,10 @@ bool ModuleGame::Start()
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
-	float leftFlipperX = 80.0f;
-	float rightFlipperX = 300.0f;
-	float flippersY = 480.0f;
-	float paddleOffset = 24.0f;
+	float leftFlipperX = 58.0f;
+	float rightFlipperX = 103.0f;
+	float flippersY = 259.0f;
+	float paddleOffset = 6.0f;
 
 	float baseX = 900.0f;
 	float baseY = 450.0f;
@@ -202,13 +219,13 @@ bool ModuleGame::Start()
 	float KickerY = 500.0f;
 
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
-	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY);
+	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
 	entities.push_back(leftFlipper);
 	entities.push_back(paddle0);
 	leftFlipper->CreateJoint(paddle0);
 
 	rightFlipper = new Flipper(App->physics, rightFlipperX, flippersY, true);
-	Paddle* paddle1 = new Paddle(App->physics, rightFlipperX - paddleOffset, flippersY);
+	Paddle* paddle1 = new Paddle(App->physics, rightFlipperX - paddleOffset, flippersY, rightFlipperTexture);
 	entities.push_back(rightFlipper);
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
@@ -254,7 +271,9 @@ update_status ModuleGame::Update()
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
 
 	if (IsKeyPressed(KEY_SPACE)) {
-		entities.push_back(new Ball(App->physics, GetMouseX(), GetMouseY(), ballTexture));
+		short scale = App->renderer->scale;
+		Rectangle& targetDest = App->renderer->targetDest;
+		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
 	}
 	
 
