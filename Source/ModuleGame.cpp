@@ -6,6 +6,7 @@
 #include "ModulePhysics.h"
 
 #include <algorithm>
+#include <iostream>
 
 // Base class for everything in the scene that has a physics body
 class PhysicsEntity
@@ -109,13 +110,14 @@ private:
 
 class Flipper : public PhysicsEntity {
 protected:
-	const float LIFT_TORQUE = 10.0f;
-	const float REST_TORQUE = 5.0f;
+	const float MAX_MOTOR_TORQUE = 30.0f;
+	const float LIFT_TORQUE = 25.0f;
+	const float REST_TORQUE = 15.0f;
 	const float LIMIT_ANGLE = 35.0f;
 
 public:
 	Flipper(ModulePhysics* physics, int x, int y, bool reverse)
-		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 1, 1))
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 2, 2))
 		, physics(physics), joint(NULL), reversed(reverse)
 	{
 		b2Filter filter = b2Filter();
@@ -136,25 +138,25 @@ public:
 		def.lowerAngle = DEGTORAD * (offset - LIMIT_ANGLE);
 		def.upperAngle = DEGTORAD * (LIMIT_ANGLE + offset);
 		def.enableMotor = true;
+		def.maxMotorTorque = MAX_MOTOR_TORQUE;
 		joint = reinterpret_cast<b2RevoluteJoint*>(physics->CreateJoint(def));
 	}
 
 	void SetLifted(bool lift) {
-		float mul = reversed ? -1.0f : 1.0f;
-		if (lift) {
-			joint->SetMaxMotorTorque(LIFT_TORQUE);
-			joint->SetMotorSpeed(-LIFT_TORQUE * mul);
+		if (lift != lifted) {
+			joint->EnableMotor(false); // HACK: I FUCKING HATE THIS!! WHY AM I FORCED TO DO THIS SHIT?? otherwise the paddles get stuck -- FUCK, I'VE WASTED SO MUCH TIME
+			lifted = lift;
+			return;
 		}
-		else {
-			joint->SetMaxMotorTorque(REST_TORQUE);
-			joint->SetMotorSpeed(REST_TORQUE * mul);
-		}
+		joint->EnableMotor(true);
+		joint->SetMotorSpeed((lift ? -LIFT_TORQUE : REST_TORQUE) * (reversed ? -1.0f : 1.0f));
 	}
 
 private:
 	ModulePhysics* physics;
 	b2RevoluteJoint* joint;
 	bool reversed;
+	bool lifted = false;
 };
 
 
@@ -208,15 +210,15 @@ bool ModuleGame::Start()
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
-	float leftFlipperX = 58.0f;
-	float rightFlipperX = 103.0f;
+	float leftFlipperX = 56.0f;
+	float rightFlipperX = 106.0f;
 	float flippersY = 259.0f;
 	float paddleOffset = 6.0f;
 
-	float baseX = 900.0f;
-	float baseY = 450.0f;
-	float KickerX = 950.0f;
-	float KickerY = 500.0f;
+	float baseX = 50.0f;
+	float baseY = 50.0f;
+	float KickerX = 50.0f;
+	float KickerY = 60.0f;
 
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
@@ -235,7 +237,7 @@ bool ModuleGame::Start()
 	//springbase->CreateJoint(springKicker);
 
 	//Bouncer
-	entities.push_back(new Bumper(App->physics, this, 500, 500, 40));
+	entities.push_back(new Bumper(App->physics, this, 24, 24, 24));
 
 
 	return true;
