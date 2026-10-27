@@ -31,39 +31,41 @@ bool ModuleRender::Init()
 // PreUpdate: clear buffer
 update_status ModuleRender::PreUpdate()
 {
+	// NOTE: Draw the game into the render target so we can scale it properly later!
+	BeginTextureMode(target);
+	ClearBackground(background);
+
 	return UPDATE_CONTINUE;
 }
 
 // Update: debug camera
 update_status ModuleRender::Update()
 {
-	// NOTE: This function setups render batching system for
-	// maximum performance, all consecutive Draw() calls are
-	// not processed until EndDrawing() is called
-	BeginTextureMode(target);
-
 	return UPDATE_CONTINUE;
 }
 
 // PostUpdate present buffer to screen
 update_status ModuleRender::PostUpdate()
 {
-    // Draw everything in our batch!
+    // draw FPS counter on top of everything
     DrawFPS(10, 10);
 
-	EndTextureMode(); // game has rendered -- end texture mode
+	// game has rendered -- end texture mode
+	EndTextureMode();
 
-	// render scaled viewport
+	// scale viewport
+	int targetW = App->window->GetWidth();
+	int targetH = App->window->GetHeight();
 	short scnW = GetScreenWidth();
 	short scnH = GetScreenHeight();
-	short resScale = (scnW < scnH) ? scnW / targetSrc.width : scnH / targetSrc.height;
-	targetDest.width = targetSrc.width * resScale;
-	targetDest.height = targetSrc.height * resScale;
+	short resScale = (scnW < scnH) ? scnW / targetW : scnH / targetH;
+	targetDest.width = targetW * resScale;
+	targetDest.height = targetH * resScale;
 	targetDest.x = scnW / 2 - targetDest.width / 2;
 	targetDest.y = scnH / 2 - targetDest.height / 2;
 
+	// render viewport
 	BeginDrawing();
-	ClearBackground(background);
 	DrawTexturePro(target.texture, targetSrc, targetDest, targetPos, 0.0f, WHITE);
 	EndDrawing();
 
@@ -73,6 +75,7 @@ update_status ModuleRender::PostUpdate()
 // Called before quitting
 bool ModuleRender::CleanUp()
 {
+	UnloadRenderTexture(target); // cleanup render target
 	return true;
 }
 
