@@ -169,12 +169,14 @@ public:
 	{
 		body->listener = listener; 
 
+
 	}
 
 	void Update() override
 	{
 		int x, y;
 		body->GetPosition(x, y);
+
 	}
 
 	void Hit(PhysBody* ball)
@@ -182,9 +184,12 @@ public:
 		
 		b2Vec2 dir = ball->body->GetPosition() - body->body->GetPosition();
 		dir.Normalize();
-
 		ball->body->SetLinearVelocity(KICK_SPEED * dir);
+
 	}
+
+
+
 
 private:
 	int radius;
@@ -193,7 +198,10 @@ private:
 
 
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
-{}
+{
+
+	points = 0;
+}
 
 
 ModuleGame::~ModuleGame()
@@ -282,6 +290,8 @@ update_status ModuleGame::Update()
 	}
 	
 
+	DrawText(TextFormat("Points: %d", points), 30, 30, 2, BLACK);
+
 	return UPDATE_CONTINUE;
 }
 
@@ -293,6 +303,7 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 		if (bumper != NULL && bumper->body == bodyA)
 		{
 			bumper->Hit(bodyB);
+			points += 100;
 		}
 	}
 }

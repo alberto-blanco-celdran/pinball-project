@@ -50,6 +50,7 @@ update_status ModuleRender::PostUpdate()
     // draw FPS counter on top of everything
     DrawFPS(10, 10);
 
+
 	// game has rendered -- end texture mode
 	EndTextureMode();
 

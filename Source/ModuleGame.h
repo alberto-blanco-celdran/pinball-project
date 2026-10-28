@@ -13,6 +13,7 @@ class PhysicsEntity;
 class Flipper;
 class Spring;
 
+
 class ModuleGame : public Module
 {
 protected:
@@ -28,6 +29,7 @@ public:
 	~ModuleGame();
 
 	bool Start();
+	int points = 0;
 	update_status Update();
 	bool CleanUp();
 
@@ -35,6 +37,5 @@ public:
 
 	void DestroyEntity(PhysicsEntity* entity);
 	void DestroyAllEntities();
-	
 	std::vector<PhysicsEntity*> entities;
 };
