@@ -66,6 +66,7 @@ update_status ModuleRender::PostUpdate()
 
 	// render viewport
 	BeginDrawing();
+	ClearBackground(BLACK);
 	DrawTexturePro(target.texture, targetSrc, targetDest, targetPos, 0.0f, WHITE);
 	EndDrawing();
 
