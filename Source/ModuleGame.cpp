@@ -15,7 +15,8 @@ protected:
 
 	PhysicsEntity(PhysBody* _body)
 		: body(_body)
-	{}
+	{
+	}
 
 public:
 	virtual ~PhysicsEntity() = default;
@@ -32,7 +33,8 @@ public:
 	Ball(ModulePhysics* physics, int x, int y, Texture2D& texture)
 		: PhysicsEntity(physics->CreateCircle(x, y, 8))
 		, texture(texture)
-	{}
+	{
+	}
 
 	void Update() override {
 		int x, y;
@@ -75,9 +77,9 @@ public:
 	void Update() override {}
 	void CreateJoint(Kicker* kicker, Spring* spring) {
 		b2DistanceJointDef def;
-		b2Body* spring_body = body->body;          
-		b2Body* kicker_body = kicker->body->body;  
-		def.Initialize( spring_body,kicker_body,spring_body->GetWorldCenter(),kicker_body->GetWorldCenter());
+		b2Body* spring_body = body->body;
+		b2Body* kicker_body = kicker->body->body;
+		def.Initialize(spring_body, kicker_body, spring_body->GetWorldCenter(), kicker_body->GetWorldCenter());
 
 		def.length = 1.0f;
 		def.stiffness = 50.0f;
@@ -85,7 +87,7 @@ public:
 
 		joint = (b2DistanceJoint*)physics->GetWorld()->CreateJoint(&def);
 	}
-	
+
 };
 
 class Paddle : public PhysicsEntity {
@@ -101,7 +103,8 @@ public:
 	Paddle(ModulePhysics* physics, int x, int y, Texture2D& texture)
 		: PhysicsEntity(physics->CreatePolygon(x, y, points, 10))
 		, texture(texture)
-	{}
+	{
+	}
 
 	void Update() override {
 		int x, y;
@@ -167,8 +170,7 @@ public:
 
 	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius) : PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius)
 	{
-		body->listener = listener; 
-
+		body->listener = listener;
 
 	}
 
@@ -176,20 +178,16 @@ public:
 	{
 		int x, y;
 		body->GetPosition(x, y);
-
 	}
 
 	void Hit(PhysBody* ball)
 	{
-		
+
 		b2Vec2 dir = ball->body->GetPosition() - body->body->GetPosition();
 		dir.Normalize();
+
 		ball->body->SetLinearVelocity(KICK_SPEED * dir);
-
 	}
-
-
-
 
 private:
 	int radius;
@@ -197,15 +195,107 @@ private:
 
 
 
+// Chain abierta (NO cerrada: el primer y el ultimo punto no se unen, eso es un hueco)
+static PhysBody* CreateOpenChain(ModulePhysics* physics, const int* points, int size)
+{
+	PhysBody* pbody = new PhysBody();
+
+	b2BodyDef body;
+	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
+
+	b2Body* b = physics->GetWorld()->CreateBody(&body);
+
+	int count = size / 2;
+	b2Vec2* vertices = new b2Vec2[count];
+	for (int i = 0; i < count; ++i)
+	{
+		vertices[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
+		vertices[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+	}
+
+	b2Vec2 prev = vertices[0] + (vertices[0] - vertices[1]);
+	b2Vec2 next = vertices[count - 1] + (vertices[count - 1] - vertices[count - 2]);
+
+	b2ChainShape shape;
+	shape.CreateChain(vertices, count, prev, next);
+	delete[] vertices; // CreateChain copia los vertices
+
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	b->CreateFixture(&fixture);
+
+	pbody->body = b;
+
+	return pbody;
+}
+
+//Paredes del tablero.Cada pared es UNA chain(una linea hecha de puntos, en pixeles : x, y, x, y...)
+// loop = false: chain abierta, el primer y el ultimo punto NO se unen (eso es un agujero)
+// loop = true:  chain cerrada, el ultimo punto se une con el primero (islas, obstaculos...)
+// El tamano del array se calcula solo, no hace falta contar los puntos.
+class Wall : public PhysicsEntity {
+public:
+	template <int N>
+	Wall(ModulePhysics* physics, const int(&points)[N], bool loop = false)
+		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : CreateOpenChain(physics, points, N))
+	{
+	}
+
+	//Las paredes estan dibujadas en board.png
+	void Update() override {}
+};
+
+// Parte izquierda del tablero: desde lo alto del arco hasta el lado izquierdo del agujero
+static const int wall_left[] = {
+	// Arco
+	100, 6, 90, 5, 74, 6, 62, 8,
+	50, 12, 43, 16, 37, 20, 32, 24,
+	28, 28, 24, 32, 21, 36, 19, 40,
+	16, 44, 14, 48, 13, 52, 11, 56,
+	10, 60, 9, 64, 8, 72, 7, 80,
+	// Pared izq
+	6, 88, 6, 108, 8, 120, 9, 128,
+	11, 136, 13, 144, 17, 152, 22, 160,
+	24, 164, 24, 192, 20, 196, 12, 200,
+	10, 204, 8, 208, 8, 244,
+	// Embudo izq
+	10, 248, 15, 252, 24, 256, 30, 260,
+	36, 264, 42, 268, 48, 272, 54, 277,
+};
+
+// Parte derecha del tablero: desde el lado derecho del drenaje, subiendo por el tablero, muelle y el arco superior
+static const int wall_right[] = {
+	// Embudo derecho
+	105, 277, 111, 272, 117, 268, 123, 264,
+	129, 260, 135, 256, 144, 252, 149, 248,
+	151, 244,
+	// Pared derecha del tablero (cara izquierda del divisor)
+	151, 208, 147, 200, 139, 196, 135, 192,
+	135, 164, 137, 160, 142, 152, 146, 144,
+	148, 136, 150, 128, 151, 120, 153, 108,
+	153, 90, 153, 80, 152, 70, 150, 62,
+	148, 54, 145, 46,
+	// Punta del divisor y cara derecha (carril del muelle)
+	148, 48, 151, 54, 155, 62, 158, 70,
+	159, 78, 161, 86, 161, 277,
+	// Fondo del carril y pared exterior
+	175, 277, 175, 80, 174, 72, 172, 62,
+	167, 50, 161, 41, 155, 35, 148, 27,
+	136, 17, 124, 11, 112, 8,
+	// Vuelta al principio del arco superior
+	100, 6,
+};
+
+
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
 {
-
 	points = 0;
 }
 
 
 ModuleGame::~ModuleGame()
-{}
+{
+}
 
 // Load assets
 bool ModuleGame::Start()
@@ -218,6 +308,10 @@ bool ModuleGame::Start()
 	ballTexture = LoadTexture("Assets/ball.png");
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
+
+	// Walls of the table (the hole between them is the drain)
+	entities.push_back(new Wall(App->physics, wall_left));
+	entities.push_back(new Wall(App->physics, wall_right));
 
 	float leftFlipperX = 56.0f;
 	float rightFlipperX = 106.0f;
@@ -241,15 +335,14 @@ bool ModuleGame::Start()
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
 
-	Spring*springbase = new Spring(App->physics, baseX, baseY);
+	Spring* springbase = new Spring(App->physics, baseX, baseY);
 	Kicker* springKicker = new Kicker(App->physics, KickerX, KickerY);
-	springbase->CreateJoint(springKicker,springbase);
+	springbase->CreateJoint(springKicker, springbase);
 
 	//Bouncer
 	entities.push_back(new Bumper(App->physics, this, 24, 24, 24));
 	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10));
 	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10));
-
 
 	return true;
 }
@@ -288,7 +381,6 @@ update_status ModuleGame::Update()
 		Rectangle& targetDest = App->renderer->targetDest;
 		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
 	}
-	
 
 	DrawText(TextFormat("Points: %d", points), 30, 30, 2, BLACK);
 
