@@ -59,25 +59,33 @@ public:
 
 
 class Spring : public PhysicsEntity {
+private:
+	ModulePhysics* physics;
+	b2Joint* joint;
+	bool reversed;
 public:
 
 	Spring(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 24, 6))
-		//,physics(physics)
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 24, 6)), physics(physics),
+		joint(NULL),
+		reversed(false)
 	{
-	}
-	
-	void Update() override {}
+	};
 
-	
-	/*void CreateJoint(Kicker* kicker, Spring* spring) {
+	void Update() override {}
+	void CreateJoint(Kicker* kicker, Spring* spring) {
 		b2DistanceJointDef def;
 		b2Body* spring_body = body->body;          
 		b2Body* kicker_body = kicker->body->body;  
-		def.Initialize( spring_body,kicker_body,spring_body->GetWorldCenter(), kicker->GetWorldCenter());
-		joint = (b2DistanceJoint*)physics->world->CreateJoint(&def);
+		def.Initialize( spring_body,kicker_body,spring_body->GetWorldCenter(),kicker_body->GetWorldCenter());
+
+		def.length = 1.0f;
+		def.stiffness = 50.0f;
+		def.damping = 2.0f;
+
+		joint = (b2DistanceJoint*)physics->GetWorld()->CreateJoint(&def);
 	}
-	*/
+	
 };
 
 class Paddle : public PhysicsEntity {
@@ -208,10 +216,10 @@ bool ModuleGame::Start()
 	float flippersY = 259.0f;
 	float paddleOffset = 6.0f;
 
-	float baseX = 50.0f;
-	float baseY = 50.0f;
-	float KickerX = 50.0f;
-	float KickerY = 60.0f;
+	float baseX = 150.0f;
+	float baseY = 70.0f;
+	float KickerX = 150.0f;
+	float KickerY = 50.0f;
 
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
@@ -227,7 +235,7 @@ bool ModuleGame::Start()
 
 	Spring*springbase = new Spring(App->physics, baseX, baseY);
 	Kicker* springKicker = new Kicker(App->physics, KickerX, KickerY);
-	//springbase->CreateJoint(springKicker);
+	springbase->CreateJoint(springKicker,springbase);
 
 	//Bouncer
 	entities.push_back(new Bumper(App->physics, this, 24, 24, 24));
