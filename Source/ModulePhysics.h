@@ -59,6 +59,9 @@ public:
 	void DestroyBody(PhysBody* pbody);
 
 	void BeginContact(b2Contact* contact) override;
+	b2World* GetWorld() {
+		return world;
+	}
 
 private:
 
