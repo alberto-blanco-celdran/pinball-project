@@ -239,6 +239,8 @@ bool ModuleGame::Start()
 
 	//Bouncer
 	entities.push_back(new Bumper(App->physics, this, 24, 24, 24));
+	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10));
+	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10));
 
 
 	return true;
