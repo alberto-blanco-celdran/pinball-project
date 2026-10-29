@@ -286,6 +286,48 @@ static const int wall_right[] = {
 	100, 6,
 };
 
+static const int big_island_right[] = {
+	114, 34, 125, 45, 133, 57, 135, 69,
+	138, 82, 138, 114, 134, 133, 132, 143,
+	127, 151, 123, 154, 112, 148, 115, 137,
+	116, 129, 111, 125, 91, 113, 91, 98,
+	113, 85, 116, 83, 121, 76, 121, 68,
+	119, 63, 114, 53
+};
+
+
+static const int big_island_left[]{
+	49, 32,
+	49, 54,
+	42, 64,
+	39, 72,
+	43, 81,
+	47, 84,
+	73, 97,
+	73, 113,
+	53, 123,
+	47, 126,
+	44, 133,
+	46, 139,
+	47, 141,
+	49, 149,
+	39, 154,
+	34, 149,
+	26, 132,
+	25, 122,
+	23, 114,
+	23, 82,
+	24, 77,
+	26, 68,
+	30, 55,
+	37, 43
+};
+//static const int up_island_right[]{};
+//static const int up_island_left[]{};
+//static const int lil_island_right[]{};
+//static const int lil_island_left[]{};
+//static const int long_island_right[]{};
+//static const int long_island_left[]{};
 
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
 {
@@ -312,6 +354,8 @@ bool ModuleGame::Start()
 	// Walls of the table (the hole between them is the drain)
 	entities.push_back(new Wall(App->physics, wall_left));
 	entities.push_back(new Wall(App->physics, wall_right));
+	entities.push_back(new Wall(App->physics, big_island_right));
+	entities.push_back(new Wall(App->physics, big_island_left));
 
 	float leftFlipperX = 56.0f;
 	float rightFlipperX = 106.0f;
