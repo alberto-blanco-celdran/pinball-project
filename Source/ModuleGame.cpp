@@ -31,7 +31,7 @@ public:
 class Ball : public PhysicsEntity {
 public:
 	Ball(ModulePhysics* physics, int x, int y, Texture2D& texture)
-		: PhysicsEntity(physics->CreateCircle(x, y, 8))
+		: PhysicsEntity(physics->CreateCircle(x, y, 4))
 		, texture(texture)
 	{
 	}
