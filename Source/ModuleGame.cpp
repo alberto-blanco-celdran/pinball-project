@@ -51,7 +51,7 @@ private:
 class Kicker : public PhysicsEntity {
 public:
 	Kicker(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreateRectangle(x, y, 24, 6))
+		: PhysicsEntity(physics->CreateRectangle(x, y, 5.5, 2))
 	{
 	}
 
@@ -68,7 +68,7 @@ private:
 public:
 
 	Spring(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 24, 6)), physics(physics),
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 5.5, 2)), physics(physics),
 		joint(NULL),
 		reversed(false)
 	{
@@ -318,10 +318,10 @@ bool ModuleGame::Start()
 	float flippersY = 259.0f;
 	float paddleOffset = 6.0f;
 
-	float baseX = 150.0f;
-	float baseY = 70.0f;
-	float KickerX = 150.0f;
-	float KickerY = 50.0f;
+	float baseX = 168.0f;
+	float baseY = 260.0f;
+	float KickerX = 168.0f;
+	float KickerY = 270.0f;
 
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
