@@ -25,6 +25,8 @@ protected:
 	Texture2D rightFlipperTexture;
 	Texture2D ballTexture;
 	Texture2D bumperTexture;
+	Texture2D bumperHitTexture;
+
 public:
 	ModuleGame(Application* app, bool start_enabled = true);
 	~ModuleGame();

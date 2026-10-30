@@ -189,21 +189,36 @@ class Bumper : public PhysicsEntity {
 public:
 	static constexpr float KICK_SPEED = 9.8f; // BOUNCE SPEED / fORCE
 
-	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& _texture) : PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius), texture(_texture)
+	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& _texture, Texture2D& _hitTexture, float hitTimer) 
+		: PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius), texture(_texture), hitTexture(_hitTexture), hitTimer(0.0f)
 	{
 		body->listener = listener;
 		texture = _texture;
-
+		hitTexture = _hitTexture;
 	}
+
+
 
 	void Update() override
 	{
+		if(hitTimer > 0) hitTimer -= GetFrameTime();
+
+		Texture2D* current = &texture;
+		
+		if (hitTimer > 0.0f) {
+			current = &hitTexture;
+		}
+		else {
+			current = &texture;
+		}
+
 		int x, y;
 		body->GetPosition(x, y);
 		Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
 		Rectangle dest = { (float)x, (float)y, (float)texture.width, (float)texture.height };
 		Vector2 origin = { (float)texture.width / 2.0f, (float)texture.height / 2.0f };
-		DrawTexturePro(texture, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
+		DrawTexturePro(*current, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
+
 	}
 
 	void Hit(PhysBody* ball)
@@ -213,11 +228,14 @@ public:
 		dir.Normalize();
 
 		ball->body->SetLinearVelocity(KICK_SPEED * dir);
+		hitTimer = 0.1;
 	}
 
 private:
 	int radius;
 	Texture2D& texture;
+	Texture2D& hitTexture;
+	float hitTimer;
 };
 
 
@@ -400,6 +418,7 @@ bool ModuleGame::Start()
 	rightFlipperTexture = LoadTexture("Assets/flipper_right.png");
 	ballTexture = LoadTexture("Assets/ball.png");
 	bumperTexture = LoadTexture("Assets/kiby.png");
+	bumperHitTexture = LoadTexture("Assets/kibyquemado.png");
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
@@ -446,12 +465,12 @@ bool ModuleGame::Start()
 	spring->CreateJoint(kicker);
 	
 	//Bouncer
-	entities.push_back(new Bumper(App->physics, this, 82, 55, 6, bumperTexture));//shellder
-	entities.push_back(new Bumper(App->physics, this, 62, 75, 6, bumperTexture));//shellder
-	entities.push_back(new Bumper(App->physics, this, 102, 75, 6, bumperTexture));//shellder
+	entities.push_back(new Bumper(App->physics, this, 82, 55, 6, bumperTexture, bumperHitTexture, 0.0));//shellder
+	entities.push_back(new Bumper(App->physics, this, 62, 75, 6, bumperTexture, bumperHitTexture, 0.0));//shellder
+	entities.push_back(new Bumper(App->physics, this, 102, 75, 6, bumperTexture, bumperHitTexture, 0.0));//shellder
 
-	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10, bumperTexture));
-	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10, bumperTexture));
+	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10, bumperTexture, bumperHitTexture, 0.0));
+	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10, bumperTexture, bumperHitTexture, 0.0));
 
 	return true;
 }
@@ -466,6 +485,7 @@ bool ModuleGame::CleanUp()
 	UnloadTexture(rightFlipperTexture);
 	UnloadTexture(ballTexture);
 	UnloadTexture(bumperTexture);
+	UnloadTexture(bumperHitTexture);
 
 	DestroyAllEntities();
 
