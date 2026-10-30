@@ -426,7 +426,20 @@ update_status ModuleGame::Update()
 		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
 	}
 
-	DrawText(TextFormat("Points: %d", points), 30, 30, 2, BLACK);
+	DrawText(TextFormat("%d", points), 63, 177, 5, BLACK);
+
+	bool extraBall = false;
+
+	if (extraBall) {
+
+		//life += 1;
+		extraBall = false;
+
+	}
+
+	//if (life == 0 || life < 0) {
+	//	points = 0;
+	//}
 
 	return UPDATE_CONTINUE;
 }
@@ -439,7 +452,12 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 		if (bumper != NULL && bumper->body == bodyA)
 		{
 			bumper->Hit(bodyB);
-			points += 100;
+			if (points > 100000) {
+				points = points;
+			}
+			else {
+				points += 100;
+			}
 		}
 	}
 }
