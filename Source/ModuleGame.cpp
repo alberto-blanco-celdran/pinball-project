@@ -187,7 +187,7 @@ private:
 
 class Bumper : public PhysicsEntity {
 public:
-	static constexpr float KICK_SPEED = 9.8f; // BOUNCE SPEED / fORCE
+	static constexpr float KICK_SPEED = 7.5f; // BOUNCE SPEED / fORCE
 
 	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& _texture, Texture2D& _hitTexture, float hitTimer) 
 		: PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius), texture(_texture), hitTexture(_hitTexture), hitTimer(0.0f)
