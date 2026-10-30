@@ -31,8 +31,8 @@ public:
 class Ball : public PhysicsEntity {
 public:
 	Ball(ModulePhysics* physics, int x, int y, Texture2D& texture)
-		: PhysicsEntity(physics->CreateCircle(x, y, 4))
-		, texture(texture)
+		: PhysicsEntity(physics->CreateCircle(x, y, 4)), texture(texture)
+		
 	{
 	}
 
@@ -384,7 +384,10 @@ bool ModuleGame::Start()
 	springbase->CreateJoint(springKicker, springbase);
 
 	//Bouncer
-	entities.push_back(new Bumper(App->physics, this, 24, 24, 24));
+	entities.push_back(new Bumper(App->physics, this, 82, 55, 6));//shellder
+	entities.push_back(new Bumper(App->physics, this, 62, 75, 6));//shellder
+	entities.push_back(new Bumper(App->physics, this, 102, 75, 6));//shellder
+
 	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10));
 	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10));
 
@@ -452,7 +455,7 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 		if (bumper != NULL && bumper->body == bodyA)
 		{
 			bumper->Hit(bodyB);
-			if (points > 100000) {
+			if (points > 1000000) {
 				points = points;
 			}
 			else {
