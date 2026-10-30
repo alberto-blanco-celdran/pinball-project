@@ -122,7 +122,7 @@ private:
 class Flipper : public PhysicsEntity {
 protected:
 	const float MAX_MOTOR_TORQUE = 50.0f;
-	const float LIFT_TORQUE = 35.0f;
+	const float LIFT_TORQUE = 45.0f;
 	const float REST_TORQUE = 15.0f;
 	const float LIMIT_ANGLE = 35.0f;
 
