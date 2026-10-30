@@ -254,10 +254,10 @@ static PhysBody* CreateOpenChain(ModulePhysics* physics, const int* points, int 
 // loop = false: chain abierta, el primer y el ultimo punto NO se unen (eso es un agujero)
 // loop = true:  chain cerrada, el ultimo punto se une con el primero (islas, obstaculos...)
 // El tamano del array se calcula solo, no hace falta contar los puntos.
-class Wall : public PhysicsEntity {
+class Wall_1 : public PhysicsEntity {
 public:
 	template <int N>
-	Wall(ModulePhysics* physics, const int(&points)[N], bool loop = false)
+	Wall_1(ModulePhysics* physics, const int(&points)[N], bool loop = false)
 		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : CreateOpenChain(physics, points, N))
 	{
 	}
@@ -266,6 +266,19 @@ public:
 	void Update() override {}
 };
 
+class Wall_2 : public PhysicsEntity {
+public:
+	template <int N>
+	Wall_2(ModulePhysics* physics, const int(&points)[N], bool loop = true)
+		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : CreateOpenChain(physics, points, N))
+	{
+	}
+
+	//Las paredes estan dibujadas en board.png
+	void Update() override {}
+};
+
+//WALL 1
 // Parte izquierda del tablero: desde lo alto del arco hasta el lado izquierdo del agujero
 static const int wall_left[] = {
 	// Arco
@@ -307,6 +320,7 @@ static const int wall_right[] = {
 	100, 6,
 };
 
+//WALL 2
 static const int big_island_right[] = {
 	114, 34, 125, 45, 133, 57, 135, 69,
 	138, 82, 138, 114, 134, 133, 132, 143,
@@ -318,37 +332,47 @@ static const int big_island_right[] = {
 
 
 static const int big_island_left[]{
-	49, 32,
-	49, 54,
-	42, 64,
-	39, 72,
-	43, 81,
-	47, 84,
-	73, 97,
-	73, 113,
-	53, 123,
-	47, 126,
-	44, 133,
-	46, 139,
-	47, 141,
-	49, 149,
-	39, 154,
-	34, 149,
-	26, 132,
-	25, 122,
-	23, 114,
-	23, 82,
-	24, 77,
-	26, 68,
-	30, 55,
-	37, 43
+	49, 32, 49, 54, 42, 64, 39, 72,
+	43, 81, 47, 84, 73, 97, 73, 113,
+	53, 123, 47, 126, 44, 133, 46, 139,
+	47, 141, 49, 149, 39, 154, 34, 149,
+	26, 132, 25, 122, 23, 114, 23, 82,
+	24, 77, 26, 68, 30, 55, 37, 43
 };
-//static const int up_island_right[]{};
-//static const int up_island_left[]{};
-//static const int lil_island_right[]{};
-//static const int lil_island_left[]{};
-//static const int long_island_right[]{};
-//static const int long_island_left[]{};
+
+
+static const int long_island_left[]{
+	141, 206, 140, 241,
+
+	113, 261, 108, 254,
+
+	133, 236, 136, 234,
+	137, 231, 137, 206
+};
+
+static const int long_island_right[]{
+	25, 207, 24, 230,
+	25, 233, 29, 236,
+
+	54, 252, 49, 259,
+
+	22, 240, 21, 207
+};
+
+static const int up_island_right[]{
+	72, 24, 72, 41, 66, 41, 66, 24
+};
+
+static const int up_island_left[]{
+	96, 24, 96, 40, 90, 41, 90, 24
+};
+
+static const int lil_island_right[]{
+	36, 209, 39, 210,52, 234, 49, 238, 39, 229, 37, 226
+};
+static const int lil_island_left[]{
+	125, 209, 126, 228, 112, 237, 112, 233, 123, 209
+};
 
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
 {
@@ -372,11 +396,19 @@ bool ModuleGame::Start()
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
-	// Walls of the table (the hole between them is the drain)
-	entities.push_back(new Wall(App->physics, wall_left));
-	entities.push_back(new Wall(App->physics, wall_right));
-	entities.push_back(new Wall(App->physics, big_island_right));
-	entities.push_back(new Wall(App->physics, big_island_left));
+	// WALL 1
+	entities.push_back(new Wall_1(App->physics, wall_left));
+	entities.push_back(new Wall_1(App->physics, wall_right));
+
+	//WALL 2
+	entities.push_back(new Wall_2(App->physics, big_island_right));
+	entities.push_back(new Wall_2(App->physics, big_island_left));
+	entities.push_back(new Wall_2(App->physics, up_island_right));
+	entities.push_back(new Wall_2(App->physics, up_island_left));
+	entities.push_back(new Wall_2(App->physics, lil_island_right));
+	entities.push_back(new Wall_2(App->physics, lil_island_left));
+	entities.push_back(new Wall_2(App->physics, long_island_right));
+	entities.push_back(new Wall_2(App->physics, long_island_left));
 
 	float leftFlipperX = 56.0f;
 	float rightFlipperX = 106.0f;
