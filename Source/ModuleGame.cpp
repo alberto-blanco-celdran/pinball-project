@@ -59,41 +59,50 @@ public:
 	Kicker(ModulePhysics* physics, int x, int y)
 		: PhysicsEntity(physics->CreateRectangle(x, y, 5.5, 2))
 	{
+		body->body->SetFixedRotation(true);
 	}
 
 	void Update() override {}
-
 };
 
 
 class Spring : public PhysicsEntity {
 private:
 	ModulePhysics* physics;
-	b2Joint* joint;
-	bool reversed;
+	b2DistanceJoint* joint;
 public:
-
 	Spring(ModulePhysics* physics, int x, int y)
 		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 5.5, 2)), physics(physics),
-		joint(NULL),
-		reversed(false)
+		joint(NULL)
 	{
+		pressed = false;
 	};
 
-	void Update() override {}
-	void CreateJoint(Kicker* kicker, Spring* spring) {
-		b2DistanceJointDef def;
-		b2Body* spring_body = body->body;
-		b2Body* kicker_body = kicker->body->body;
-		def.Initialize(spring_body, kicker_body, spring_body->GetWorldCenter(), kicker_body->GetWorldCenter());
-
-		def.length = 1.0f;
-		def.stiffness = 50.0f;
-		def.damping = 2.0f;
-
-		joint = (b2DistanceJoint*)physics->GetWorld()->CreateJoint(&def);
+	void Update() override
+	{
+		if (!pressed) { return;  }
+		body->body->ApplyLinearImpulseToCenter(b2Vec2{ 0.0f, 400.0f }, true);
+		/*if (!pressed) {
+			joint->SetLength(joint->GetMaxLength());
+			return;
+		}
+		joint->SetLength(std::max(joint->GetCurrentLength() - GetFrameTime() * 2.0f, joint->GetMinLength()));*/
 	}
 
+	void CreateJoint(Kicker* kicker) {
+		b2Body* springBody = body->body;
+		b2Body* kickerBody = kicker->body->body;
+		b2DistanceJointDef def;
+		def.Initialize(springBody, kickerBody, springBody->GetWorldCenter(), kickerBody->GetWorldCenter());
+		def.collideConnected = true;
+		def.minLength = 0.3f;
+		def.maxLength = 1.3f;
+		def.length = def.maxLength;
+		b2LinearStiffness(def.stiffness, def.damping, 4.0f, 0.5f, def.bodyA, def.bodyB);
+		joint = reinterpret_cast<b2DistanceJoint*>(physics->CreateJoint(def));
+	}
+
+	bool pressed;
 };
 
 class Paddle : public PhysicsEntity {
@@ -375,9 +384,9 @@ bool ModuleGame::Start()
 	float paddleOffset = 6.0f;
 
 	float baseX = 168.0f;
-	float baseY = 260.0f;
+	float baseY = 270.0f;
 	float KickerX = 168.0f;
-	float KickerY = 270.0f;
+	float KickerY = 260.0f;
 
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
@@ -391,10 +400,12 @@ bool ModuleGame::Start()
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
 
-	Spring* springbase = new Spring(App->physics, baseX, baseY);
-	Kicker* springKicker = new Kicker(App->physics, KickerX, KickerY);
-	springbase->CreateJoint(springKicker, springbase);
-
+	spring = new Spring(App->physics, baseX, baseY);
+	Kicker* kicker = new Kicker(App->physics, KickerX, KickerY);
+	entities.push_back(spring);
+	entities.push_back(kicker);
+	spring->CreateJoint(kicker);
+	
 	//Bouncer
 	entities.push_back(new Bumper(App->physics, this, 82, 55, 6));//shellder
 	entities.push_back(new Bumper(App->physics, this, 62, 75, 6));//shellder
@@ -434,6 +445,7 @@ update_status ModuleGame::Update()
 
 	leftFlipper->SetLifted(IsKeyDown(KEY_LEFT));
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
+	spring->pressed = IsKeyDown(KEY_DOWN);
 
 	if (IsKeyPressed(KEY_SPACE)) {
 		short scale = App->renderer->scale;
