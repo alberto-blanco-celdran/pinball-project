@@ -189,9 +189,10 @@ class Bumper : public PhysicsEntity {
 public:
 	static constexpr float KICK_SPEED = 9.8f; // BOUNCE SPEED / fORCE
 
-	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius) : PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius)
+	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& _texture) : PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius), texture(_texture)
 	{
 		body->listener = listener;
+		texture = _texture;
 
 	}
 
@@ -199,6 +200,10 @@ public:
 	{
 		int x, y;
 		body->GetPosition(x, y);
+		Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+		Rectangle dest = { (float)x, (float)y, (float)texture.width, (float)texture.height };
+		Vector2 origin = { (float)texture.width / 2.0f, (float)texture.height / 2.0f };
+		DrawTexturePro(texture, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
 	}
 
 	void Hit(PhysBody* ball)
@@ -212,6 +217,7 @@ public:
 
 private:
 	int radius;
+	Texture2D& texture;
 };
 
 
@@ -393,6 +399,7 @@ bool ModuleGame::Start()
 	leftFlipperTexture = LoadTexture("Assets/flipper_left.png");
 	rightFlipperTexture = LoadTexture("Assets/flipper_right.png");
 	ballTexture = LoadTexture("Assets/ball.png");
+	bumperTexture = LoadTexture("Assets/kiby.png");
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
@@ -439,12 +446,12 @@ bool ModuleGame::Start()
 	spring->CreateJoint(kicker);
 	
 	//Bouncer
-	entities.push_back(new Bumper(App->physics, this, 82, 55, 6));//shellder
-	entities.push_back(new Bumper(App->physics, this, 62, 75, 6));//shellder
-	entities.push_back(new Bumper(App->physics, this, 102, 75, 6));//shellder
+	entities.push_back(new Bumper(App->physics, this, 82, 55, 6, bumperTexture));//shellder
+	entities.push_back(new Bumper(App->physics, this, 62, 75, 6, bumperTexture));//shellder
+	entities.push_back(new Bumper(App->physics, this, 102, 75, 6, bumperTexture));//shellder
 
-	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10));
-	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10));
+	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10, bumperTexture));
+	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10, bumperTexture));
 
 	return true;
 }
@@ -458,6 +465,7 @@ bool ModuleGame::CleanUp()
 	UnloadTexture(leftFlipperTexture);
 	UnloadTexture(rightFlipperTexture);
 	UnloadTexture(ballTexture);
+	UnloadTexture(bumperTexture);
 
 	DestroyAllEntities();
 
