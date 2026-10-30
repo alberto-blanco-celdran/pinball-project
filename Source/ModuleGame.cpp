@@ -34,6 +34,12 @@ public:
 		: PhysicsEntity(physics->CreateCircle(x, y, 4)), texture(texture)
 		
 	{
+		b2Filter filter = b2Filter();
+		filter.categoryBits = 0x0002;
+		for (b2Fixture* fixture = body->body->GetFixtureList(); fixture; fixture = fixture->GetNext())
+		{
+			fixture->SetFilterData(filter);
+		}
 	}
 
 	void Update() override {
@@ -104,6 +110,12 @@ public:
 		: PhysicsEntity(physics->CreatePolygon(x, y, points, 10))
 		, texture(texture)
 	{
+		b2Filter filter = b2Filter();
+		filter.maskBits = 0x0002;
+		for (b2Fixture* fixture = body->body->GetFixtureList(); fixture; fixture = fixture->GetNext())
+		{
+			fixture->SetFilterData(filter);
+		}
 	}
 
 	void Update() override {
