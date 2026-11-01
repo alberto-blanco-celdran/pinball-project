@@ -11,14 +11,14 @@
 class PhysBody;
 class PhysicsEntity;
 class Flipper;
-class Spring;
+class Kicker;
 
 class ModuleGame : public Module
 {
 protected:
 	Flipper* leftFlipper;
 	Flipper* rightFlipper;
-	Spring* spring;
+	Kicker* kicker;
 
 	Texture2D boardTexture;
 	Texture2D leftFlipperTexture;

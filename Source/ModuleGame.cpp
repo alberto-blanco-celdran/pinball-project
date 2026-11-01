@@ -55,14 +55,35 @@ private:
 };
 
 class Kicker : public PhysicsEntity {
+protected:
+	const float CHARGE_TIME = 0.8f;
+	const float MAX_FORCE = 1600.0f;
+
+private:
+	float chargeTime = 0.0f;
+
 public:
 	Kicker(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreateRectangle(x, y, 5.5, 2))
+		: PhysicsEntity(physics->CreateRectangle(x, y, 6, 2))
+		, pressed(false)
 	{
 		body->body->SetFixedRotation(true);
 	}
 
-	void Update() override {}
+	void Update() override
+	{
+		if (!pressed) {
+			if (chargeTime > 0.0f) {
+				body->body->ApplyForceToCenter(b2Vec2 { 0, 0 }, true); // HACK: sometimes it gets stuck (???)
+			}
+			chargeTime = 0.0f;
+			return;
+		}
+		chargeTime += GetFrameTime();
+		body->body->ApplyForceToCenter(b2Vec2{ 0.0f, MAX_FORCE * std::min(chargeTime / CHARGE_TIME, 1.0f)}, true);
+	}
+
+	bool pressed;
 };
 
 
@@ -72,22 +93,11 @@ private:
 	b2DistanceJoint* joint;
 public:
 	Spring(ModulePhysics* physics, int x, int y)
-		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 5.5, 2)), physics(physics),
+		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 6, 2)), physics(physics),
 		joint(NULL)
-	{
-		pressed = false;
-	};
+	{};
 
-	void Update() override
-	{
-		if (!pressed) { return;  }
-		body->body->ApplyLinearImpulseToCenter(b2Vec2{ 0.0f, 400.0f }, true);
-		/*if (!pressed) {
-			joint->SetLength(joint->GetMaxLength());
-			return;
-		}
-		joint->SetLength(std::max(joint->GetCurrentLength() - GetFrameTime() * 2.0f, joint->GetMinLength()));*/
-	}
+	void Update() override {}
 
 	void CreateJoint(Kicker* kicker) {
 		b2Body* springBody = body->body;
@@ -98,11 +108,9 @@ public:
 		def.minLength = 0.3f;
 		def.maxLength = 1.3f;
 		def.length = def.maxLength;
-		b2LinearStiffness(def.stiffness, def.damping, 4.0f, 0.5f, def.bodyA, def.bodyB);
+		b2LinearStiffness(def.stiffness, def.damping, 25.0f, 0.2f, def.bodyA, def.bodyB);
 		joint = reinterpret_cast<b2DistanceJoint*>(physics->CreateJoint(def));
 	}
-
-	bool pressed;
 };
 
 class Paddle : public PhysicsEntity {
@@ -120,7 +128,7 @@ public:
 		, texture(texture)
 	{
 		b2Filter filter = b2Filter();
-		filter.maskBits = 0x0002;
+		filter.maskBits = 0x0002; // only collide with the ball
 		for (b2Fixture* fixture = body->body->GetFixtureList(); fixture; fixture = fixture->GetNext())
 		{
 			fixture->SetFilterData(filter);
@@ -142,10 +150,10 @@ private:
 
 class Flipper : public PhysicsEntity {
 protected:
-	const float MAX_MOTOR_TORQUE = 50.0f;
-	const float LIFT_TORQUE = 45.0f;
-	const float REST_TORQUE = 15.0f;
-	const float LIMIT_ANGLE = 35.0f;
+	static constexpr float MAX_MOTOR_TORQUE = 50.0f;
+	static constexpr float LIFT_TORQUE = 45.0f;
+	static constexpr float REST_TORQUE = 15.0f;
+	static constexpr float LIMIT_ANGLE = 35.0f;
 
 public:
 	Flipper(ModulePhysics* physics, int x, int y, bool reverse)
@@ -186,59 +194,58 @@ private:
 
 
 class Bumper : public PhysicsEntity {
-public:
-	static constexpr float KICK_SPEED = 7.5f; // BOUNCE SPEED / fORCE
+protected:
+	static constexpr float KICK_SPEED = 7.5f; // BOUNCE SPEED / FORCE
+	static constexpr float HIT_TIME = 0.1f;
+	float hitTimer;
 
-	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& _texture, Texture2D& _hitTexture, float hitTimer) 
-		: PhysicsEntity(physics->CreateStaticCircle(x, y, radius)), radius(radius), texture(_texture), hitTexture(_hitTexture), hitTimer(0.0f)
+public:
+	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius) 
+		: PhysicsEntity(physics->CreateStaticCircle(x, y, radius))
+		, hitTimer(0.0f)
 	{
 		body->listener = listener;
-		texture = _texture;
-		hitTexture = _hitTexture;
 	}
-
-
 
 	void Update() override
 	{
-		if(hitTimer > 0) hitTimer -= GetFrameTime();
+		hitTimer = std::max(hitTimer - GetFrameTime(), 0.0f);
+	}
 
-		Texture2D* current = &texture;
-		
-		if (hitTimer > 0.0f) {
-			current = &hitTexture;
-		}
-		else {
-			current = &texture;
-		}
+	void Hit(PhysBody* ball)
+	{
+		b2Vec2 dir = ball->body->GetPosition() - body->body->GetPosition();
+		dir.Normalize();
 
+		ball->body->SetLinearVelocity(KICK_SPEED * dir);
+		hitTimer = HIT_TIME;
+	}
+};
+
+class KibyBumper : public Bumper {
+public:
+	KibyBumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& texture, Texture2D& hitTexture)
+		: Bumper(physics, listener, x, y, radius)
+		, texture(texture), hitTexture(hitTexture)
+	{};
+
+	void Update() override
+	{
+		Bumper::Update(); // update timer
+
+		// draw kiby sprite
 		int x, y;
 		body->GetPosition(x, y);
 		Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
 		Rectangle dest = { (float)x, (float)y, (float)texture.width, (float)texture.height };
 		Vector2 origin = { (float)texture.width / 2.0f, (float)texture.height / 2.0f };
-		DrawTexturePro(*current, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
-
-	}
-
-	void Hit(PhysBody* ball)
-	{
-
-		b2Vec2 dir = ball->body->GetPosition() - body->body->GetPosition();
-		dir.Normalize();
-
-		ball->body->SetLinearVelocity(KICK_SPEED * dir);
-		hitTimer = 0.1;
+		DrawTexturePro(hitTimer > 0.0f ? hitTexture : texture, source, dest, origin, body->GetRotation() * RAD2DEG, WHITE);
 	}
 
 private:
-	int radius;
 	Texture2D& texture;
 	Texture2D& hitTexture;
-	float hitTimer;
 };
-
-
 
 // Chain abierta (NO cerrada: el primer y el ultimo punto no se unen, eso es un hueco)
 static PhysBody* CreateOpenChain(ModulePhysics* physics, const int* points, int size)
@@ -368,7 +375,7 @@ static const int big_island_left[]{
 static const int long_island_left[]{
 	141, 206, 140, 241,
 
-	113, 261, 108, 254,
+	113, 259, 107, 251,
 
 	133, 236, 136, 234,
 	137, 231, 137, 206
@@ -413,6 +420,7 @@ bool ModuleGame::Start()
 {
 	LOG("Loading Intro assets");
 
+	// load textures
 	boardTexture = LoadTexture("Assets/board.png");
 	leftFlipperTexture = LoadTexture("Assets/flipper_left.png");
 	rightFlipperTexture = LoadTexture("Assets/flipper_right.png");
@@ -441,11 +449,11 @@ bool ModuleGame::Start()
 	float flippersY = 259.0f;
 	float paddleOffset = 6.0f;
 
-	float baseX = 168.0f;
-	float baseY = 270.0f;
-	float KickerX = 168.0f;
-	float KickerY = 260.0f;
+	float springX = 168.0f;
+	float springY = 280.0f;
+	float kickerY = springY - 10.0f;
 
+	// flippers
 	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
 	entities.push_back(leftFlipper);
@@ -458,19 +466,21 @@ bool ModuleGame::Start()
 	entities.push_back(paddle1);
 	rightFlipper->CreateJoint(paddle1);
 
-	spring = new Spring(App->physics, baseX, baseY);
-	Kicker* kicker = new Kicker(App->physics, KickerX, KickerY);
+	// kicker
+	Spring* spring = new Spring(App->physics, springX, springY);
+	kicker = new Kicker(App->physics, springX, kickerY);
 	entities.push_back(spring);
 	entities.push_back(kicker);
 	spring->CreateJoint(kicker);
 	
-	//Bouncer
-	entities.push_back(new Bumper(App->physics, this, 82, 55, 6, bumperTexture, bumperHitTexture, 0.0));//shellder
-	entities.push_back(new Bumper(App->physics, this, 62, 75, 6, bumperTexture, bumperHitTexture, 0.0));//shellder
-	entities.push_back(new Bumper(App->physics, this, 102, 75, 6, bumperTexture, bumperHitTexture, 0.0));//shellder
+	// bumpers
+	entities.push_back(new KibyBumper(App->physics, this, 82, 55, 6, bumperTexture, bumperHitTexture));
+	entities.push_back(new KibyBumper(App->physics, this, 62, 75, 6, bumperTexture, bumperHitTexture));
+	entities.push_back(new KibyBumper(App->physics, this, 102, 75, 6, bumperTexture, bumperHitTexture));
+	entities.push_back(new KibyBumper(App->physics, this, 81, 142, 6, bumperTexture, bumperHitTexture));
 
-	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10, bumperTexture, bumperHitTexture, 0.0));
-	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10, bumperTexture, bumperHitTexture, 0.0));
+	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10));
+	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10));
 
 	return true;
 }
@@ -505,7 +515,7 @@ update_status ModuleGame::Update()
 
 	leftFlipper->SetLifted(IsKeyDown(KEY_LEFT));
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
-	spring->pressed = IsKeyDown(KEY_DOWN);
+	kicker->pressed = IsKeyDown(KEY_DOWN);
 
 	if (IsKeyPressed(KEY_SPACE)) {
 		short scale = App->renderer->scale;
