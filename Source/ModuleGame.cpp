@@ -504,7 +504,8 @@ bool ModuleGame::Start()
 	entities.push_back(new BallSensor(App->physics, this, 0, SCREEN_HEIGHT + 24, SCREEN_WIDTH, 16));
 
 	// ball
-	entities.push_back(new Ball(App->physics, spawnPoint.x, spawnPoint.y, ballTexture));
+	ball = new Ball(App->physics, spawnPoint.x, spawnPoint.y, ballTexture);
+	entities.push_back(ball);
 
 	return true;
 }
@@ -532,6 +533,11 @@ update_status ModuleGame::Update()
 	DrawTexture(boardTexture, 0, 0, RAYWHITE);
 	DrawText(TextFormat("%d", points), 63, 177, 5, BLACK);
 
+	for (PhysicsEntity* entity : entities)
+	{
+		entity->Update();
+	}
+
 	if (lives < 0) {
 		if (IsKeyDown(KEY_ENTER)) {
 			points = 0;
@@ -539,17 +545,18 @@ update_status ModuleGame::Update()
 			return UPDATE_CONTINUE;
 		}
 
-		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color { 0, 0, 0, 128 });
-		DrawText("GAME OVER", 63, 63, 20, RED);
+		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{ 0, 0, 0, 128 });
+		DrawText("GAME OVER", 35, 80, 20, RED);
 		DrawText(TextFormat("YOUR SCORE: %d", points), 63, 100, 5, WHITE);
 		DrawText("PRESS [ENTER] TO TRY AGAIN", 63, 155, 10, WHITE);
 		return UPDATE_CONTINUE;
 	}
 
-	for (PhysicsEntity* entity : entities)
-	{
-		entity->Update();
-
+	if (ballResetQueued) {
+		ball->body->body->SetAngularVelocity(0.0f);
+		ball->body->body->SetLinearVelocity(b2Vec2{ 0, 0 });
+		ball->body->body->SetTransform(b2Vec2{ PIXEL_TO_METERS(spawnPoint.x), PIXEL_TO_METERS(spawnPoint.y) }, 0.0f);
+		ballResetQueued = false;
 	}
 
 	leftFlipper->SetLifted(IsKeyDown(KEY_LEFT));
@@ -596,7 +603,7 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				continue;
 			}
 			// HACK: this shouldn't go here, but it will for now
-			//bodyA->body->SetTransform(b2Vec2 { PIXEL_TO_METERS(spawnPoint.x), PIXEL_TO_METERS(spawnPoint.y)}, 0.0f);
+			ballResetQueued = true;
 			lives -= 1;
 			continue;
 		}

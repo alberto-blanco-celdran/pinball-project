@@ -12,10 +12,12 @@ class PhysBody;
 class PhysicsEntity;
 class Flipper;
 class Kicker;
+class Ball;
 
 class ModuleGame : public Module
 {
 protected:
+	Ball* ball;
 	Flipper* leftFlipper;
 	Flipper* rightFlipper;
 	Kicker* kicker;
@@ -45,4 +47,7 @@ public:
 	int lives;
 	int points;
 	std::vector<PhysicsEntity*> entities;
+
+private:
+	bool ballResetQueued;
 };
