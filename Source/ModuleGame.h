@@ -27,12 +27,13 @@ protected:
 	Texture2D bumperTexture;
 	Texture2D bumperHitTexture;
 
+	Vector2 spawnPoint;
+
 public:
 	ModuleGame(Application* app, bool start_enabled = true);
 	~ModuleGame();
 
 	bool Start();
-	int points = 0;
 	update_status Update();
 	bool CleanUp();
 
@@ -40,5 +41,8 @@ public:
 
 	void DestroyEntity(PhysicsEntity* entity);
 	void DestroyAllEntities();
+
+	int lives;
+	int points;
 	std::vector<PhysicsEntity*> entities;
 };

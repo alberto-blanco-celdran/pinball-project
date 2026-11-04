@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <iostream>
 
-// Base class for everything in the scene that has a physics body
+// Base class for everything in the scene that has a physics body.
 class PhysicsEntity
 {
 protected:
@@ -27,6 +27,7 @@ public:
 public:
 	PhysBody* body;
 };
+
 
 class Ball : public PhysicsEntity {
 public:
@@ -54,6 +55,7 @@ public:
 private:
 	Texture2D& texture;
 };
+
 
 class Kicker : public PhysicsEntity {
 protected:
@@ -223,6 +225,7 @@ public:
 	}
 };
 
+
 class KibyBumper : public Bumper {
 public:
 	KibyBumper(ModulePhysics* physics, Module* listener, int x, int y, int radius, Texture2D& texture, Texture2D& hitTexture)
@@ -247,6 +250,18 @@ private:
 	Texture2D& texture;
 	Texture2D& hitTexture;
 };
+
+
+class BallSensor : public PhysicsEntity {
+public:
+	BallSensor(ModulePhysics* physics, Module* listener, int x, int y, int w, int h)
+		: PhysicsEntity(physics->CreateRectangleSensor(x, y, w, h))
+	{
+		body->listener = listener;
+	};
+	void Update() override {};
+};
+
 
 // Chain abierta (NO cerrada: el primer y el ultimo punto no se unen, eso es un hueco)
 static PhysBody* CreateOpenChain(ModulePhysics* physics, const int* points, int size)
@@ -406,11 +421,13 @@ static const int lil_island_left[]{
 	125, 209, 126, 228, 112, 237, 112, 233, 123, 209
 };
 
-ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled), leftFlipper(NULL), rightFlipper(NULL)
+ModuleGame::ModuleGame(Application* app, bool start_enabled)
+	: Module(app, start_enabled)
+	, leftFlipper(NULL), rightFlipper(NULL)
+	, spawnPoint(Vector2 { 168, 230 })
+	, lives(3), points(0)
 {
-	points = 0;
 }
-
 
 ModuleGame::~ModuleGame()
 {
@@ -483,6 +500,12 @@ bool ModuleGame::Start()
 	entities.push_back(new  Bumper(App->physics, this, 22, 183, 10));
 	entities.push_back(new  Bumper(App->physics, this, 138, 180, 10));
 
+	// sensor
+	entities.push_back(new BallSensor(App->physics, this, 0, SCREEN_HEIGHT + 24, SCREEN_WIDTH, 16));
+
+	// ball
+	entities.push_back(new Ball(App->physics, spawnPoint.x, spawnPoint.y, ballTexture));
+
 	return true;
 }
 
@@ -507,6 +530,21 @@ bool ModuleGame::CleanUp()
 update_status ModuleGame::Update()
 {
 	DrawTexture(boardTexture, 0, 0, RAYWHITE);
+	DrawText(TextFormat("%d", points), 63, 177, 5, BLACK);
+
+	if (lives < 0) {
+		if (IsKeyDown(KEY_ENTER)) {
+			points = 0;
+			lives = 3;
+			return UPDATE_CONTINUE;
+		}
+
+		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color { 0, 0, 0, 128 });
+		DrawText("GAME OVER", 63, 63, 20, RED);
+		DrawText(TextFormat("YOUR SCORE: %d", points), 63, 100, 5, WHITE);
+		DrawText("PRESS [ENTER] TO TRY AGAIN", 63, 155, 10, WHITE);
+		return UPDATE_CONTINUE;
+	}
 
 	for (PhysicsEntity* entity : entities)
 	{
@@ -523,8 +561,6 @@ update_status ModuleGame::Update()
 		Rectangle& targetDest = App->renderer->targetDest;
 		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
 	}
-
-	DrawText(TextFormat("%d", points), 63, 177, 5, BLACK);
 
 	bool extraBall = false;
 
@@ -546,16 +582,23 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 {
 	for (PhysicsEntity* entity : entities)
 	{
-		Bumper* bumper = dynamic_cast<Bumper*>(entity);
-		if (bumper != NULL && bumper->body == bodyA)
-		{
+		if (Bumper* bumper = dynamic_cast<Bumper*>(entity)) {
+			if (bumper->body != bodyA) {
+				continue;
+			}
 			bumper->Hit(bodyB);
-			if (points > 1000000) {
-				points = points;
+			points = std::min(points + 100, 999999); // HACK: this shouldn't go here, but it will for now
+			continue;
+		}
+
+		if (BallSensor* sensor = dynamic_cast<BallSensor*>(entity)) {
+			if (sensor->body != bodyA) {
+				continue;
 			}
-			else {
-				points += 100;
-			}
+			// HACK: this shouldn't go here, but it will for now
+			//bodyA->body->SetTransform(b2Vec2 { PIXEL_TO_METERS(spawnPoint.x), PIXEL_TO_METERS(spawnPoint.y)}, 0.0f);
+			lives -= 1;
+			continue;
 		}
 	}
 }
