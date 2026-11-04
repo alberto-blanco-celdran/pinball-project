@@ -446,7 +446,7 @@ bool ModuleGame::Start()
 	entities.push_back(new Wall_2(App->physics, long_island_left));
 
 	float leftFlipperX = 58.0f;
-	float rightFlipperX = 104.0f;
+	float rightFlipperX = 103.0f;
 	float flippersY = 259.0f;
 	float paddleOffset = 6.0f;
 
