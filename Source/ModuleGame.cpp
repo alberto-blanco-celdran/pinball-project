@@ -40,6 +40,7 @@ public:
 		{
 			fixture->SetFilterData(filter);
 		}
+		body->body->SetBullet(true); // increase collisions precision
 	}
 
 	void Update() override {
@@ -444,8 +445,8 @@ bool ModuleGame::Start()
 	entities.push_back(new Wall_2(App->physics, long_island_right));
 	entities.push_back(new Wall_2(App->physics, long_island_left));
 
-	float leftFlipperX = 56.0f;
-	float rightFlipperX = 106.0f;
+	float leftFlipperX = 58.0f;
+	float rightFlipperX = 104.0f;
 	float flippersY = 259.0f;
 	float paddleOffset = 6.0f;
 
