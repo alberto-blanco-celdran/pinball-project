@@ -351,7 +351,6 @@ PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size)
 	return pbody;
 }
 
-
 // Chain abierta (NO cerrada: el primer y el ultimo punto no se unen, eso es un hueco)
 PhysBody* ModulePhysics::CreateOpenChain(int x, int y, const int* points, int size)
 {
@@ -386,7 +385,6 @@ PhysBody* ModulePhysics::CreateOpenChain(int x, int y, const int* points, int si
 
 	return pbody;
 }
-
 
 PhysBody* ModulePhysics::CreatePolygon(int x, int y, const int* points, int size) {
 

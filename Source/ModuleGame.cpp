@@ -357,7 +357,7 @@ static const int big_island_left[]{
 static const int long_island_left[]{
 	141, 206, 140, 241,
 
-	113, 259, 107, 251,
+	111, 261, 105, 252,
 
 	133, 236, 136, 234,
 	137, 231, 137, 206
