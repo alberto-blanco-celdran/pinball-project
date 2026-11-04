@@ -19,6 +19,7 @@ bool ModuleWindow::Init()
 
 	unsigned int flags = 0;
 	bool fullscreen = WIN_FULLSCREEN;
+	bool maximized = WIN_FULLSCREEN_DESKTOP;
 	bool borderless = WIN_BORDERLESS;
 	bool resizable = WIN_RESIZABLE;
 	bool vsync = VSYNC;
@@ -38,6 +39,10 @@ bool ModuleWindow::Init()
 
     SetConfigFlags(flags);
 	InitWindow(width, height, TITLE);
+
+	if (maximized) {
+		MaximizeWindow();
+	}
 
 	return ret;
 }

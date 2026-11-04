@@ -425,7 +425,7 @@ static const int lil_island_left[]{
 ModuleGame::ModuleGame(Application* app, bool start_enabled)
 	: Module(app, start_enabled)
 	, leftFlipper(NULL), rightFlipper(NULL)
-	, spawnPoint(Vector2 { 168, 230 })
+	, spawnPoint(Vector2 { 168, 250 })
 	, lives(3), points(0), combo(0)
 {
 }
@@ -470,7 +470,7 @@ bool ModuleGame::Start()
 	float paddleOffset = 6.0f;
 
 	float springX = 168.0f;
-	float springY = 280.0f;
+	float springY = 288.0f;
 	float kickerY = springY - 10.0f;
 
 	// flippers
