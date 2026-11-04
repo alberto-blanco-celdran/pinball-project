@@ -569,18 +569,10 @@ update_status ModuleGame::Update()
 		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
 	}
 
-	bool extraBall = false;
-
-	if (extraBall) {
-
-		//life += 1;
-		extraBall = false;
-
+	if (points % 1000 == 0 && points > 0) {
+		lives += 1;
 	}
-
-	//if (life == 0 || life < 0) {
-	//	points = 0;
-	//}
+	if (lives >= 6) lives = 5;
 
 	return UPDATE_CONTINUE;
 }
