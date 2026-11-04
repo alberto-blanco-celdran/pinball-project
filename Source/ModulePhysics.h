@@ -4,6 +4,7 @@
 #include "Globals.h"
 
 #include "box2d/box2d.h"
+#include "ModuleGame.h"
 
 // Gravity in m/s^2. Screen Y grows DOWNWARDS and we convert meters <-> pixels without flipping Y,
 // so a POSITIVE Y gravity makes bodies fall down on screen. That is why the world receives -GRAVITY_Y.
@@ -21,7 +22,7 @@
 class PhysBody
 {
 public:
-	PhysBody() : body(NULL), listener(NULL)
+	PhysBody() : body(NULL), listener(NULL), owner(NULL)
 	{}
 
 	void GetPosition(int& x, int& y) const;
@@ -29,10 +30,10 @@ public:
 	bool Contains(int x, int y) const;
 	int RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const;
 
-public:
 	b2Body* body;
 	// Module that listens to the collisions of this body
 	Module* listener;
+	PhysicsEntity* owner;
 };
 
 // Module --------------------------------------
@@ -63,8 +64,8 @@ public:
 		return world;
 	}
 
-private:
-
 	bool debug;
+
+private:
 	b2World* world;
 };

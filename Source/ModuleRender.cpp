@@ -2,8 +2,8 @@
 #include "Application.h"
 #include "ModuleWindow.h"
 #include "ModuleRender.h"
+#include "ModulePhysics.h"
 #include <math.h>
-#include <iostream>
 
 ModuleRender::ModuleRender(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
@@ -48,8 +48,9 @@ update_status ModuleRender::Update()
 update_status ModuleRender::PostUpdate()
 {
     // draw FPS counter on top of everything
-    DrawFPS(10, 10);
-
+	if (App->physics->debug) {
+		DrawFPS(10, 10);
+	}
 
 	// game has rendered -- end texture mode
 	EndTextureMode();

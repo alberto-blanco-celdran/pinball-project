@@ -14,8 +14,9 @@ class PhysicsEntity
 protected:
 
 	PhysicsEntity(PhysBody* _body)
-		: body(_body)
+		: body(_body), markedForDeletion(false)
 	{
+		_body->owner = this;
 	}
 
 public:
@@ -24,8 +25,8 @@ public:
 	// Draw the entity at the position of its body
 	virtual void Update() = 0;
 
-public:
 	PhysBody* body;
+	bool markedForDeletion;
 };
 
 
@@ -425,7 +426,7 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled)
 	: Module(app, start_enabled)
 	, leftFlipper(NULL), rightFlipper(NULL)
 	, spawnPoint(Vector2 { 168, 230 })
-	, lives(3), points(0)
+	, lives(3), points(0), combo(0)
 {
 }
 
@@ -445,6 +446,7 @@ bool ModuleGame::Start()
 	ballTexture = LoadTexture("Assets/ball.png");
 	bumperTexture = LoadTexture("Assets/kiby.png");
 	bumperHitTexture = LoadTexture("Assets/kibyquemado.png");
+	lifeTexture = LoadTexture("Assets/life.png");
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
@@ -531,13 +533,24 @@ bool ModuleGame::CleanUp()
 update_status ModuleGame::Update()
 {
 	DrawTexture(boardTexture, 0, 0, RAYWHITE);
-	DrawText(TextFormat("%d", points), 63, 177, 5, BLACK);
 
+	// Score and lives
+	for (int i = 1; i <= lives; i++) {
+		DrawTexture(lifeTexture, 60 + 8 * (i - 1), 186, WHITE);
+	}
+	DrawText(TextFormat("%d", points), 63, 173, 5, Color{ 72, 75, 82, 255 });
+
+	// Update
 	for (PhysicsEntity* entity : entities)
 	{
+		if (entity->markedForDeletion) {
+			DestroyEntity(entity);
+			continue;
+		}
 		entity->Update();
 	}
 
+	// Game over
 	if (lives < 0) {
 		if (IsKeyDown(KEY_ENTER)) {
 			points = 0;
@@ -545,13 +558,22 @@ update_status ModuleGame::Update()
 			return UPDATE_CONTINUE;
 		}
 
-		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{ 0, 0, 0, 128 });
-		DrawText("GAME OVER", 35, 80, 20, RED);
-		DrawText(TextFormat("YOUR SCORE: %d", points), 63, 100, 5, WHITE);
-		DrawText("PRESS [ENTER] TO TRY AGAIN", 63, 155, 10, WHITE);
+		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{ 0, 0, 0, 200 });
+		DrawText("GAME OVER", 35, 112, 20, RED);
+		DrawText(TextFormat("YOUR SCORE: %d", points), 35, 144, 5, WHITE);
+		
+		Color highscoreCol = GRAY;
+		if (points >= highscore && highscore > 0) {
+			highscoreCol = GOLD;
+			DrawText("NEW HIGHSCORE!", 50, 180, 5, WHITE);
+		}
+		DrawText(TextFormat("HIGHSCORE: %d", highscore), 35, 156, 5, highscoreCol);
+
+		DrawText("PRESS [ENTER] TO TRY AGAIN", 16, 205, 5, YELLOW);
 		return UPDATE_CONTINUE;
 	}
 
+	// Ball resetting
 	if (ballResetQueued) {
 		ball->body->body->SetAngularVelocity(0.0f);
 		ball->body->body->SetLinearVelocity(b2Vec2{ 0, 0 });
@@ -559,6 +581,7 @@ update_status ModuleGame::Update()
 		ballResetQueued = false;
 	}
 
+	// Input
 	leftFlipper->SetLifted(IsKeyDown(KEY_LEFT));
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
 	kicker->pressed = IsKeyDown(KEY_DOWN);
@@ -569,44 +592,47 @@ update_status ModuleGame::Update()
 		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
 	}
 
-	bool extraBall = false;
-
-	if (extraBall) {
-
-		//life += 1;
-		extraBall = false;
-
-	}
-
-	//if (life == 0 || life < 0) {
-	//	points = 0;
-	//}
-
 	return UPDATE_CONTINUE;
 }
 
 void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 {
-	for (PhysicsEntity* entity : entities)
-	{
-		if (Bumper* bumper = dynamic_cast<Bumper*>(entity)) {
-			if (bumper->body != bodyA) {
-				continue;
-			}
-			bumper->Hit(bodyB);
-			points = std::min(points + 100, 999999); // HACK: this shouldn't go here, but it will for now
-			continue;
+	if (Bumper* bumper = dynamic_cast<Bumper*>(bodyA->owner)) {
+		if (bumper->body != bodyA) {
+			return;
+		}
+		bumper->Hit(bodyB);
+
+		// HACK: this shouldn't go here, but it will for now
+		int bonus = 100;
+		points = std::min(points + bonus, 999999);
+		highscore = std::max(points, highscore); // update highscore if current score is greater
+		combo += bonus;
+		if (combo >= 1000) {
+			lives = std::min(lives + 1, 5);
+			combo = 0;
+		}
+		return;
+	}
+
+	if (BallSensor* sensor = dynamic_cast<BallSensor*>(bodyA->owner)) {
+		if (sensor->body != bodyA) {
+			return;
 		}
 
-		if (BallSensor* sensor = dynamic_cast<BallSensor*>(entity)) {
-			if (sensor->body != bodyA) {
-				continue;
+		// destroy additional balls
+		if (Ball* cheatBall = dynamic_cast<Ball*>(bodyB->owner)) {
+			if (cheatBall != ball) {
+				cheatBall->markedForDeletion = true;
+				return;
 			}
-			// HACK: this shouldn't go here, but it will for now
-			ballResetQueued = true;
-			lives -= 1;
-			continue;
 		}
+
+		// HACK: this shouldn't go here, but it will for now
+		ballResetQueued = true;
+		lives -= 1;
+		combo = 0;
+		return;
 	}
 }
 

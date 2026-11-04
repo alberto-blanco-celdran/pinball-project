@@ -28,6 +28,7 @@ protected:
 	Texture2D ballTexture;
 	Texture2D bumperTexture;
 	Texture2D bumperHitTexture;
+	Texture2D lifeTexture;
 
 	Vector2 spawnPoint;
 
@@ -46,6 +47,8 @@ public:
 
 	int lives;
 	int points;
+	int combo;
+	int highscore;
 	std::vector<PhysicsEntity*> entities;
 
 private:
