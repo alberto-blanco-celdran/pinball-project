@@ -263,41 +263,6 @@ public:
 	void Update() override {};
 };
 
-
-// Chain abierta (NO cerrada: el primer y el ultimo punto no se unen, eso es un hueco)
-static PhysBody* CreateOpenChain(ModulePhysics* physics, const int* points, int size)
-{
-	PhysBody* pbody = new PhysBody();
-
-	b2BodyDef body;
-	body.userData.pointer = reinterpret_cast<uintptr_t>(pbody);
-
-	b2Body* b = physics->GetWorld()->CreateBody(&body);
-
-	int count = size / 2;
-	b2Vec2* vertices = new b2Vec2[count];
-	for (int i = 0; i < count; ++i)
-	{
-		vertices[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
-		vertices[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
-	}
-
-	b2Vec2 prev = vertices[0] + (vertices[0] - vertices[1]);
-	b2Vec2 next = vertices[count - 1] + (vertices[count - 1] - vertices[count - 2]);
-
-	b2ChainShape shape;
-	shape.CreateChain(vertices, count, prev, next);
-	delete[] vertices; // CreateChain copia los vertices
-
-	b2FixtureDef fixture;
-	fixture.shape = &shape;
-	b->CreateFixture(&fixture);
-
-	pbody->body = b;
-
-	return pbody;
-}
-
 //Paredes del tablero.Cada pared es UNA chain(una linea hecha de puntos, en pixeles : x, y, x, y...)
 // loop = false: chain abierta, el primer y el ultimo punto NO se unen (eso es un agujero)
 // loop = true:  chain cerrada, el ultimo punto se une con el primero (islas, obstaculos...)
@@ -306,7 +271,7 @@ class Wall_1 : public PhysicsEntity {
 public:
 	template <int N>
 	Wall_1(ModulePhysics* physics, const int(&points)[N], bool loop = false)
-		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : CreateOpenChain(physics, points, N))
+		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : physics->CreateOpenChain(0, 0, points, N))
 	{
 	}
 
@@ -318,7 +283,7 @@ class Wall_2 : public PhysicsEntity {
 public:
 	template <int N>
 	Wall_2(ModulePhysics* physics, const int(&points)[N], bool loop = true)
-		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : CreateOpenChain(physics, points, N))
+		: PhysicsEntity(loop ? physics->CreateChain(0, 0, points, N) : physics->CreateOpenChain(0, 0, points, N))
 	{
 	}
 
@@ -426,7 +391,7 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled)
 	: Module(app, start_enabled)
 	, leftFlipper(NULL), rightFlipper(NULL)
 	, spawnPoint(Vector2 { 168, 250 })
-	, lives(3), points(0), combo(0)
+	, lives(3), points(0), combo(0), previous(0)
 {
 }
 
@@ -553,6 +518,7 @@ update_status ModuleGame::Update()
 	// Game over
 	if (lives < 0) {
 		if (IsKeyDown(KEY_ENTER)) {
+			previous = points;
 			points = 0;
 			lives = 3;
 			return UPDATE_CONTINUE;
@@ -560,16 +526,17 @@ update_status ModuleGame::Update()
 
 		DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{ 0, 0, 0, 200 });
 		DrawText("GAME OVER", 35, 112, 20, RED);
-		DrawText(TextFormat("YOUR SCORE: %d", points), 35, 144, 5, WHITE);
+		DrawText(TextFormat("PREVIOUS SCORE: %d", previous), 35, 144, 5, DARKGRAY);
+		DrawText(TextFormat("YOUR SCORE: %d", points), 35, 156, 5, WHITE);
 		
 		Color highscoreCol = GRAY;
 		if (points >= highscore && highscore > 0) {
 			highscoreCol = GOLD;
-			DrawText("NEW HIGHSCORE!", 50, 180, 5, WHITE);
+			DrawText("NEW HIGHSCORE!", 50, 192, 5, WHITE);
 		}
-		DrawText(TextFormat("HIGHSCORE: %d", highscore), 35, 156, 5, highscoreCol);
+		DrawText(TextFormat("HIGHSCORE: %d", highscore), 35, 168, 5, highscoreCol);
 
-		DrawText("PRESS [ENTER] TO TRY AGAIN", 16, 205, 5, YELLOW);
+		DrawText("PRESS [ENTER] TO TRY AGAIN", 16, 216, 5, YELLOW);
 		return UPDATE_CONTINUE;
 	}
 
@@ -586,10 +553,9 @@ update_status ModuleGame::Update()
 	rightFlipper->SetLifted(IsKeyDown(KEY_RIGHT));
 	kicker->pressed = IsKeyDown(KEY_DOWN);
 
-	if (IsKeyPressed(KEY_SPACE)) {
-		short scale = App->renderer->scale;
-		Rectangle& targetDest = App->renderer->targetDest;
-		entities.push_back(new Ball(App->physics, std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()), ballTexture));
+	if (App->physics->debug && IsKeyPressed(KEY_ONE)) {
+		Vector2 mousePosition = App->renderer->GetMousePosition();
+		entities.push_back(new Ball(App->physics, mousePosition.x, mousePosition.y, ballTexture));
 	}
 
 	return UPDATE_CONTINUE;

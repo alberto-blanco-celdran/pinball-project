@@ -54,6 +54,7 @@ public:
 	PhysBody* CreateStaticRectangle(int x, int y, int half_width, int half_height);
 	PhysBody* CreateRectangleSensor(int x, int y, int half_width, int half_height);
 	PhysBody* CreateChain(int x, int y, const int* points, int size);
+	PhysBody* CreateOpenChain(int x, int y, const int* points, int size);
 	PhysBody* CreatePolygon(int x, int y, const int* points, int size);
 	b2Joint* CreateJoint(b2JointDef& def);
 
@@ -68,4 +69,6 @@ public:
 
 private:
 	b2World* world;
+	b2Body* ground;
+	b2MouseJoint* mouse_joint;
 };

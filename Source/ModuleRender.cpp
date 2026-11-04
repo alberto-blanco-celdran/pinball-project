@@ -119,3 +119,10 @@ bool ModuleRender::DrawText(const char * text, int x, int y, Font font, int spac
 
     return ret;
 }
+
+Vector2 ModuleRender::GetMousePosition() {
+	short scale = App->renderer->scale;
+	Rectangle& targetDest = App->renderer->targetDest;
+	return Vector2{ std::min(std::max((GetMouseX() - targetDest.x) / scale, 0.0f), (float)GetScreenWidth()), std::min(std::max((GetMouseY() - targetDest.y) / scale, 0.0f), (float)GetScreenHeight()) };
+
+}

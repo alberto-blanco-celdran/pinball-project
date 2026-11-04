@@ -49,6 +49,7 @@ public:
 	int points;
 	int combo;
 	int highscore;
+	int previous;
 	std::vector<PhysicsEntity*> entities;
 
 private:
