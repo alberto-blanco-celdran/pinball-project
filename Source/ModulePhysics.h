@@ -66,6 +66,9 @@ public:
 	}
 
 	bool debug;
+	bool fpsControl = false;
+	bool heavyGravity = false;
+	bool friction = false;
 
 private:
 	b2World* world;

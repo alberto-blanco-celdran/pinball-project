@@ -56,8 +56,45 @@ update_status ModulePhysics::PostUpdate()
 		{
 			world->DestroyJoint(mouse_joint);
 			mouse_joint = NULL;
-		}
+		}	
+		fpsControl = false;
+		heavyGravity = false;
+		friction = false;
+		world->SetGravity(b2Vec2(GRAVITY_X, -GRAVITY_Y));
+		SetTargetFPS(60.00f);
 		return UPDATE_CONTINUE;
+	}
+	
+	if (debug) {
+
+
+		//Double Gravity
+		if (IsKeyPressed(KEY_F2)) {
+			heavyGravity = !heavyGravity;
+		}
+		if(heavyGravity) world->SetGravity(b2Vec2(GRAVITY_X, -2 * GRAVITY_Y));
+		else world->SetGravity(b2Vec2(GRAVITY_X, -GRAVITY_Y));
+
+
+		//Control Frame rate
+		if (IsKeyPressed(KEY_F3)) {
+			fpsControl = !fpsControl;
+
+		}
+		if (fpsControl) SetTargetFPS(30.00f);
+		else SetTargetFPS(60.00f);
+
+		//Friction 
+		if (IsKeyPressed(KEY_F4)) {
+			friction = !friction;
+			if (friction) {
+
+			}
+			else;
+
+		}
+
+
 	}
 
 	Vector2 rawMousePos = App->renderer->GetMousePosition();
