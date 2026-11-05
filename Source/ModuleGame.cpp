@@ -212,12 +212,14 @@ private:
 
 class Bumper : public PhysicsEntity {
 protected:
-	static constexpr float KICK_SPEED = 7.5f; // BOUNCE SPEED / FORCE
+	 // BOUNCE SPEED / FORCE
 	static constexpr float HIT_TIME = 0.1f;
 	float hitTimer;
 
 public:
-	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius) 
+
+	static float KICK_SPEED;
+	Bumper(ModulePhysics* physics, Module* listener, int x, int y, int radius)
 		: PhysicsEntity(physics->CreateStaticCircle(x, y, radius))
 		, hitTimer(0.0f)
 	{
@@ -237,7 +239,7 @@ public:
 		ball->body->SetLinearVelocity(KICK_SPEED * dir);
 		hitTimer = HIT_TIME;
 	}
-};
+}; float Bumper::KICK_SPEED = 7.5f;
 
 
 class KibyBumper : public Bumper {
@@ -497,6 +499,7 @@ bool ModuleGame::Start()
 	ball = new Ball(App->physics, spawnPoint.x, spawnPoint.y, ballTexture);
 	entities.push_back(ball);
 
+
 	return true;
 }
 
@@ -538,6 +541,12 @@ update_status ModuleGame::Update()
 		entity->Update();
 	}
 
+	if (IsKeyPressed(KEY_F1)) debug = !debug, Bumper::KICK_SPEED = 7.5f;
+
+	if (debug && IsKeyPressed(KEY_F4)) {
+		Bumper::KICK_SPEED = 50.0f;
+	}
+
 	// Game over
 	if (lives < 0) {
 		if (IsKeyDown(KEY_ENTER)) {
@@ -560,6 +569,8 @@ update_status ModuleGame::Update()
 		DrawText(TextFormat("HIGHSCORE: %d", highscore), 35, 168, 5, highscoreCol);
 
 		DrawText("PRESS [ENTER] TO TRY AGAIN", 16, 216, 5, YELLOW);
+
+
 		return UPDATE_CONTINUE;
 	}
 
@@ -580,10 +591,6 @@ update_status ModuleGame::Update()
 		Vector2 mousePosition = App->renderer->GetMousePosition();
 		entities.push_back(new Ball(App->physics, mousePosition.x, mousePosition.y, ballTexture));
 	}
-
-
-
-
 
 	return UPDATE_CONTINUE;
 }

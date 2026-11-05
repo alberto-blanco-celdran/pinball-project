@@ -59,7 +59,6 @@ update_status ModulePhysics::PostUpdate()
 		}	
 		fpsControl = false;
 		heavyGravity = false;
-		friction = false;
 		world->SetGravity(b2Vec2(GRAVITY_X, -GRAVITY_Y));
 		SetTargetFPS(60.00f);
 		return UPDATE_CONTINUE;
@@ -85,14 +84,7 @@ update_status ModulePhysics::PostUpdate()
 		else SetTargetFPS(60.00f);
 
 		//Friction 
-		if (IsKeyPressed(KEY_F4)) {
-			friction = !friction;
-			if (friction) {
 
-			}
-			else;
-
-		}
 
 
 	}

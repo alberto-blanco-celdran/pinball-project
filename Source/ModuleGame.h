@@ -56,6 +56,8 @@ public:
 	int combo;
 	int highscore;
 	int previous;
+	bool debug = false;
+	bool bumper = false;
 	std::vector<PhysicsEntity*> entities;
 
 private:
