@@ -32,6 +32,12 @@ protected:
 
 	Vector2 spawnPoint;
 
+	uint32 BumperAudio;
+	uint32 KickerAudio;
+	uint32 FlickerAudio;
+	uint32 OstAudio;
+	uint32 DeathAudio;
+
 public:
 	ModuleGame(Application* app, bool start_enabled = true);
 	~ModuleGame();

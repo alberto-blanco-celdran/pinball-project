@@ -67,9 +67,9 @@ private:
 	float chargeTime = 0.0f;
 
 public:
-	Kicker(ModulePhysics* physics, int x, int y)
+	Kicker(ModulePhysics* physics, ModuleAudio* audio, int x, int y, uint32 sound)
 		: PhysicsEntity(physics->CreateRectangle(x, y, 6, 2))
-		, pressed(false)
+		, pressed(false), Audio(audio), Sound(sound)
 	{
 		body->body->SetFixedRotation(true);
 	}
@@ -78,6 +78,7 @@ public:
 	{
 		if (!pressed) {
 			if (chargeTime > 0.0f) {
+				Audio->PlayFx(Sound);
 				body->body->ApplyForceToCenter(b2Vec2 { 0, 0 }, true); // HACK: sometimes it gets stuck (???)
 			}
 			chargeTime = 0.0f;
@@ -88,6 +89,8 @@ public:
 	}
 
 	bool pressed;
+	ModuleAudio* Audio;
+	uint32 Sound;
 };
 
 
@@ -160,9 +163,9 @@ protected:
 	static constexpr float LIMIT_ANGLE = 35.0f;
 
 public:
-	Flipper(ModulePhysics* physics, int x, int y, bool reverse)
+	Flipper(ModulePhysics* physics, ModuleAudio* audio, int x, int y, bool reverse, uint sound)
 		: PhysicsEntity(physics->CreateStaticRectangle(x, y, 2, 2))
-		, physics(physics), joint(NULL), reversed(reverse)
+		, physics(physics), joint(NULL), reversed(reverse), Audio(audio), Sound(sound), lifted(false)
 	{
 		b2Filter filter = b2Filter();
 		filter.categoryBits = 0x0000; // do not collide with anything
@@ -187,13 +190,23 @@ public:
 	}
 
 	void SetLifted(bool lift) {
+		if (lifted != lift) {
+			lifted = lift;
+			if (lift) {
+				Audio->PlayFx(Sound);
+			}
+		}
+
 		joint->SetMotorSpeed((lift ? -LIFT_TORQUE : REST_TORQUE) * (reversed ? -1.0f : 1.0f));
 	}
 
 private:
 	ModulePhysics* physics;
 	b2RevoluteJoint* joint;
+	ModuleAudio* Audio;
+	uint32 Sound;
 	bool reversed;
+	bool lifted;
 };
 
 
@@ -415,6 +428,16 @@ bool ModuleGame::Start()
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 
+	//Audio
+	
+	KickerAudio = App->audio->LoadFx("Assets/Flicker.wav");
+	DeathAudio = App->audio->LoadFx("Assets/Kicker.wav");
+	BumperAudio = App->audio->LoadFx("Assets/Death.wav");
+	FlickerAudio = App->audio->LoadFx("Assets/Bumper.wav");
+	App->audio->LoadFx("Assets/bonus.wav"); //Sin este audio todo peta por alguna razon
+
+
+
 	// WALL 1
 	entities.push_back(new Wall_1(App->physics, wall_left));
 	entities.push_back(new Wall_1(App->physics, wall_right));
@@ -439,13 +462,13 @@ bool ModuleGame::Start()
 	float kickerY = springY - 10.0f;
 
 	// flippers
-	leftFlipper = new Flipper(App->physics, leftFlipperX, flippersY, false);
+	leftFlipper = new Flipper(App->physics, App->audio, leftFlipperX, flippersY, false, FlickerAudio);
 	Paddle* paddle0 = new Paddle(App->physics, leftFlipperX - paddleOffset, flippersY, leftFlipperTexture);
 	entities.push_back(leftFlipper);
 	entities.push_back(paddle0);
 	leftFlipper->CreateJoint(paddle0);
 
-	rightFlipper = new Flipper(App->physics, rightFlipperX, flippersY, true);
+	rightFlipper = new Flipper(App->physics, App->audio, rightFlipperX, flippersY, true, FlickerAudio);
 	Paddle* paddle1 = new Paddle(App->physics, rightFlipperX - paddleOffset, flippersY, rightFlipperTexture);
 	entities.push_back(rightFlipper);
 	entities.push_back(paddle1);
@@ -453,7 +476,7 @@ bool ModuleGame::Start()
 
 	// kicker
 	Spring* spring = new Spring(App->physics, springX, springY);
-	kicker = new Kicker(App->physics, springX, kickerY);
+	kicker = new Kicker(App->physics, App->audio, springX, kickerY, KickerAudio);
 	entities.push_back(spring);
 	entities.push_back(kicker);
 	spring->CreateJoint(kicker);
@@ -567,6 +590,7 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 		if (bumper->body != bodyA) {
 			return;
 		}
+		App->audio->PlayFx(BumperAudio);
 		bumper->Hit(bodyB);
 
 		// HACK: this shouldn't go here, but it will for now
@@ -596,6 +620,7 @@ void ModuleGame::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 
 		// HACK: this shouldn't go here, but it will for now
 		ballResetQueued = true;
+		App->audio->PlayFx(DeathAudio);
 		lives -= 1;
 		combo = 0;
 		return;
